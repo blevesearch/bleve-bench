@@ -22,9 +22,19 @@ elapsed,docs,avg_single_doc_ms,avg_batched_doc_ms,query_water_matches,first_quer
 
 ## Running
 
+This will download the wikipedia dataset if you don't have it.  Then it will build the linefile utility.  Then it will run the linefile utility on the wikipedia dataset.  NOTE: the download is large and may take a long time (this only happens the first time)
+
 		make wikilinefile
 
-This will download the wikipedia dataset if you don't have it.  Then it will build the linefile utility.  Then it will run the linefile utility on the wikipedia dataset.
+Build
+
+		go build 
+
+To build it with support for some optional C-based storage engines
+
+		go build -tags 'leveldb forestdb'
+
+Run the benchmark with all defaults:
 
 		./bleve-bench
 
