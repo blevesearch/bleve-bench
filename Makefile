@@ -7,7 +7,7 @@ tmp/enwiki-20070527-pages-articles.xml.bz2: tmp
 linefile:
 	go build linefile.go
 
-wikilinefile: linefile
+wikilinefile: linefile tmp/enwiki-20070527-pages-articles.xml.bz2
 	./linefile tmp/enwiki-20070527-pages-articles.xml.bz2 tmp/enwiki.txt tmp/categories-enwiki.txt
 
 clean:
