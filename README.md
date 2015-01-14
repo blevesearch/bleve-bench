@@ -54,3 +54,16 @@ Load 3000 articles using the leveldb backend and dump a cpu-profile at the end.
 Load 3000 articles using the leveldb backend and dump a memory profile after every level.
 
 		./bleve-bench -config configs/leveldb.json -count 3000 -memprofile=leveldb-mem.profile
+
+# Conclusions
+
+What kind of conclusions can we draw from this utility?  Here is a chart produced using this utility to load 100k wikipedia documents into bleve.
+
+![](docs/leveldb-100kdocs.png)
+
+This shows several important things:
+
+1.  Indexing in a batch is faster than indexing individually.
+2.  Indexing performance remained consistent as we added more and more documents.
+3.  Term query time increases nearly linearly with respect to the number of documents matching the term.  The query behavior becomes more erratic and changes slope around 50k documents.
+4.  The first query seems to perform better than the average of running the query five times.  This is surprising and warrants further exploration.
