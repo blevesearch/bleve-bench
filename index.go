@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/blevesearch/bleve"
+	"github.com/blevesearch/bleve/index/store/metrics"
 )
 
 var config = flag.String("config", "", "configuration file to use")
@@ -75,9 +76,19 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	_, store, err := index.Advanced()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// print header
-	fmt.Printf("elapsed,docs,avg_single_doc_ms,avg_batched_doc_ms,query_water_matches,first_query_water_ms,avg_repeated%d_query_water_ms\n", *qrepeat)
+	fmt.Printf("elapsed,docs,avg_single_doc_ms,avg_batched_doc_ms,query_water_matches,first_query_water_ms,avg_repeated%d_query_water_ms", *qrepeat)
+	storeMetrics, ok := store.(*metrics.Store)
+	if ok && storeMetrics != nil {
+		fmt.Printf(",")
+		storeMetrics.WriteCSVHeader(os.Stdout)
+	}
+	fmt.Printf("\n")
 
 	singleCount := 0
 	var singleTime time.Duration
@@ -150,12 +161,19 @@ func main() {
 			avgBatchDocTime := float64(avgBatchTime) / float64(*batchSize)
 			avgQueryTime := float64(termQueryTime) / float64(termQueryCount)
 			elapsedTime := time.Since(start) / time.Millisecond
-			fmt.Printf("%d,%d,%f,%f,%d,%f,%f\n", elapsedTime, i, avgSingleDocTime/float64(time.Millisecond), avgBatchDocTime/float64(time.Millisecond), searchResults.Total, firstQueryTime/float64(time.Millisecond), avgQueryTime/float64(time.Millisecond))
+			fmt.Printf("%d,%d,%f,%f,%d,%f,%f", elapsedTime, i, avgSingleDocTime/float64(time.Millisecond), avgBatchDocTime/float64(time.Millisecond), searchResults.Total, firstQueryTime/float64(time.Millisecond), avgQueryTime/float64(time.Millisecond))
+			if storeMetrics != nil {
+				fmt.Printf(",")
+				storeMetrics.WriteCSV(os.Stdout)
+			}
+			fmt.Printf("\n")
+
 			// reset stats
 			singleCount = 0
 			singleTime = 0
 			batchCount = 0
 			batchTime = 0
+
 			// dump mem stats if requested
 			if *memprofile != "" {
 				f, err := os.Create(strconv.Itoa(i) + "-" + *memprofile)

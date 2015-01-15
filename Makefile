@@ -1,3 +1,6 @@
+bleve-bench: index.go
+	go build -tags 'forestdb leveldb debug'
+
 tmp:
 	mkdir -p tmp
 
