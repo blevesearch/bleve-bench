@@ -67,7 +67,7 @@ Load 3000 articles using the leveldb backend and dump a memory profile after eve
 
 # Conclusions
 
-What kind of conclusions can we draw from this utility?  Here is a chart produced using this utility to load 100k wikipedia documents into bleve.
+What kind of conclusions can we draw from this utility?  Here is a chart produced using this utility to load 100k wikipedia documents into bleve using the LevelDB backend.
 
 ![](docs/leveldb-100kdocs.png)
 
@@ -77,3 +77,13 @@ This shows several important things:
 2.  Indexing performance remained consistent as we added more and more documents.
 3.  Term query time increases nearly linearly with respect to the number of documents matching the term.  The query behavior becomes more erratic and changes slope around 50k documents.
 4.  The first query seems to perform better than the average of running the query five times.  This is surprising and warrants further exploration.
+
+Here is the same test run with the BoltDB backend.
+
+![](docs/boltdb-100kdocs.png)
+
+This too shows several important things:
+
+1.  Indexing individual documents is considerably more expensive than a batch.
+2.  But both perform somewhat consistently through the test.
+3.  Query performance appears both more consistent and faster with BoltDB compared to LevelDB.
