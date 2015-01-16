@@ -108,7 +108,7 @@ func main() {
 			singleStart := time.Now()
 			err = index.Index(a.Title, a)
 			if err != nil {
-				log.Fatal(err)
+				log.Fatalf("error indexing: %v", err)
 			}
 			duration := time.Since(singleStart)
 			singleCount++
@@ -119,7 +119,10 @@ func main() {
 			// if batch is full index it
 			if batch.Size() == *batchSize {
 				batchStart := time.Now()
-				index.Batch(batch)
+				err := index.Batch(batch)
+				if err != nil {
+					log.Fatalf("error executing batch: %v", err)
+				}
 				duration := time.Since(batchStart)
 				batchCount++
 				batchTime += duration
@@ -138,7 +141,7 @@ func main() {
 			termSearch := bleve.NewSearchRequest(termQuery)
 			searchResults, err := index.Search(termSearch)
 			if err != nil {
-				log.Fatal(err)
+				log.Fatalf("error searching: %v", err)
 			}
 			termQueryCount++
 			termQueryTime := time.Since(termQueryStart)
