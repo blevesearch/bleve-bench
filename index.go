@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/blevesearch/bleve"
-	"github.com/blevesearch/bleve/index/store/metrics"
 )
 
 var config = flag.String("config", "", "configuration file to use")
@@ -83,11 +82,7 @@ func main() {
 
 	// print header
 	fmt.Printf("elapsed,docs,avg_single_doc_ms,avg_batched_doc_ms,query_water_matches,first_query_water_ms,avg_repeated%d_query_water_ms", *qrepeat)
-	storeMetrics, ok := store.(*metrics.Store)
-	if ok && storeMetrics != nil {
-		fmt.Printf(",")
-		storeMetrics.WriteCSVHeader(os.Stdout)
-	}
+	printOtherHeader(store)
 	fmt.Printf("\n")
 
 	singleCount := 0
@@ -165,10 +160,7 @@ func main() {
 			avgQueryTime := float64(termQueryTime) / float64(termQueryCount)
 			elapsedTime := time.Since(start) / time.Millisecond
 			fmt.Printf("%d,%d,%f,%f,%d,%f,%f", elapsedTime, i, avgSingleDocTime/float64(time.Millisecond), avgBatchDocTime/float64(time.Millisecond), searchResults.Total, firstQueryTime/float64(time.Millisecond), avgQueryTime/float64(time.Millisecond))
-			if storeMetrics != nil {
-				fmt.Printf(",")
-				storeMetrics.WriteCSV(os.Stdout)
-			}
+			printOther(store)
 			fmt.Printf("\n")
 
 			// reset stats
