@@ -89,7 +89,7 @@ func main() {
 	var singleTime time.Duration
 	batchCount := 0
 	var batchTime time.Duration
-	batch := bleve.NewBatch()
+	batch := index.NewBatch()
 	for i := 1; i < (*count)+1; i++ {
 
 		leveli := i % *level
@@ -122,7 +122,7 @@ func main() {
 				batchCount++
 				batchTime += duration
 				// reset batch
-				batch = bleve.NewBatch()
+				batch = index.NewBatch()
 			}
 		}
 
