@@ -1,0 +1,7 @@
+{
+	"leveldb": {
+		"write_buffer_size": 536870912,
+		"lru_cache_capacity": 536870912,
+		"bloom_filter_bits_per_key": 10
+	}
+}

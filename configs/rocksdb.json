@@ -1,0 +1,6 @@
+{
+	"rocksdb": {
+		"max_open_files": 200,
+		"total_threads": 4
+	}
+}

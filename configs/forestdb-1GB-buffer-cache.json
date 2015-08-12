@@ -1,5 +1,6 @@
 {
 	"forestdb": {
+		"bufferCacheSize": 1073741824,
 		"compressDocumentBody": true
 	}
 }
