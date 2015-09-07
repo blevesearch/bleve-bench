@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"log"
 	"os"
+	"runtime"
 	"runtime/pprof"
 	"strconv"
 	"time"
@@ -23,12 +25,64 @@ var level = flag.Int("level", 1000, "report level")
 var qrepeat = flag.Int("qrepeat", 5, "query repeat")
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 var memprofile = flag.String("memprofile", "", "write memory profile every level")
+var configDir = flag.String("configdir", "", "directory for configs")
+
+var typename []string = []string{
+	"avg_single_doc_ms",
+	"avg_batched_doc_ms",
+	"query_water_matches",
+	"first_query_water_ms",
+}
+
+type Image struct {
+	Name string
+}
+
+type im struct {
+	Images []string
+}
 
 func main() {
 	flag.Parse()
+	lineptrs := [][]*Line{}
+	var v []*Line
+	if *configDir != "" {
+		files, _ := ioutil.ReadDir(*configDir)
+		for _, f := range files {
+			fmt.Println(f.Name())
+			if f.Name() == "." || f.Name() == ".." {
+				continue
+			}
+			v = runConfig(*configDir+"/"+f.Name(), *target+"_"+f.Name(),
+				*cpuprofile+"_"+f.Name())
+			lineptrs = append(lineptrs, v)
+			runtime.GC()
+		}
+	} else {
+		v = runConfig(*config, *target, *cpuprofile)
+		lineptrs = append(lineptrs, v)
+	}
+	fileNames := []string{}
+	for k := 0; k < len(lineptrs[0]); k++ {
+		kj := []*Line{}
+		for _, o := range lineptrs {
+			kj = append(kj, o[k])
+		}
+		doPlot(kj, typename[k], "docs", "time", typename[k]+".png")
+		fileNames = append(fileNames, typename[k]+".png")
+	}
+	output, err := os.OpenFile("output.html", os.O_CREATE|os.O_RDWR, 0666)
+	m := &im{Images: fileNames}
+	t, err := template.ParseFiles("result.tmpl")
+	if err != nil {
+		panic(err)
+	}
+	t.Execute(output, m)
+}
 
-	if *cpuprofile != "" {
-		f, err := os.Create(*cpuprofile)
+func runConfig(conf string, tar string, cpu string) []*Line {
+	if cpu != "" {
+		f, err := os.Create(cpu)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -48,8 +102,8 @@ func main() {
 	storeType := bleve.Config.DefaultKVStore
 	storeConfig := map[string]interface{}{}
 
-	if *config != "" {
-		configBytes, err := ioutil.ReadFile(*config)
+	if conf != "" {
+		configBytes, err := ioutil.ReadFile(conf)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -71,7 +125,7 @@ func main() {
 
 	fmt.Printf("Using KV store: %s\n", storeType)
 	fmt.Printf("Using KV config: %#v\n", storeConfig)
-	index, err := bleve.NewUsing(*target, mapping, storeType, storeConfig)
+	index, err := bleve.NewUsing(tar, mapping, storeType, storeConfig)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -80,6 +134,9 @@ func main() {
 		log.Fatal(err)
 	}
 
+	itr := *count / (*level)
+	lines := NewLines(itr, len(typename), conf, typename)
+	tot := 0
 	// print header
 	fmt.Printf("elapsed,docs,avg_single_doc_ms,avg_batched_doc_ms,query_water_matches,first_query_water_ms,avg_repeated%d_query_water_ms", *qrepeat)
 	printOtherHeader(store)
@@ -161,6 +218,16 @@ func main() {
 			elapsedTime := time.Since(start) / time.Millisecond
 			fmt.Printf("%d,%d,%f,%f,%d,%f,%f", elapsedTime, i, avgSingleDocTime/float64(time.Millisecond), avgBatchDocTime/float64(time.Millisecond), searchResults.Total, firstQueryTime/float64(time.Millisecond), avgQueryTime/float64(time.Millisecond))
 			printOther(store)
+			lines[0].Pt[tot].Y = avgSingleDocTime / float64(time.Millisecond)
+			lines[0].Pt[tot].X = float64(i)
+			lines[1].Pt[tot].Y = avgBatchDocTime / float64(time.Millisecond)
+			lines[1].Pt[tot].X = float64(i)
+			lines[2].Pt[tot].Y = firstQueryTime / float64(time.Millisecond)
+			lines[2].Pt[tot].X = float64(i)
+			lines[3].Pt[tot].Y = avgQueryTime / float64(time.Millisecond)
+			lines[3].Pt[tot].X = float64(i)
+			tot++
+
 			fmt.Printf("\n")
 
 			// reset stats
@@ -180,4 +247,5 @@ func main() {
 		}
 
 	}
+	return lines
 }
