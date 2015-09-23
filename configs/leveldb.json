@@ -1,3 +1,5 @@
 {
-	"leveldb": {}
+	"index_type": "upside_down",
+	"kvstore": "leveldb",
+	"kvconfig": {}
 }

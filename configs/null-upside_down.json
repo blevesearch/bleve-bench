@@ -1,5 +1,5 @@
 {
 	"index_type": "upside_down",
-	"kvstore": "goleveldb",
+	"kvstore": "null",
 	"kvconfig": {}
 }

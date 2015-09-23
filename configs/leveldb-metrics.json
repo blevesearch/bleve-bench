@@ -1,5 +1,7 @@
 {
-    "metrics": {
+	"index_type": "upside_down",
+	"kvstore": "metrics",
+    "kvconfig": {
         "kvStoreName_actual": "leveldb"
     }
 }

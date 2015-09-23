@@ -7,5 +7,6 @@
 .DS_Store
 /tmp
 /linefile
-/bleve-bench
+/cmd/bleve-bench/bleve-bench
+/cmd/bleve-blast/bleve-blast
 *.bleve

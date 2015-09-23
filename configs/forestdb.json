@@ -1,5 +1,7 @@
 {
-	"forestdb": {
+	"index_type": "upside_down",
+	"kvstore": "forestdb",
+	"kvconfig": {
 		"compressDocumentBody": true
 	}
 }

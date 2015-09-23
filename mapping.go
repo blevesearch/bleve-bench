@@ -1,10 +1,10 @@
-package main
+package blevebench
 
 import (
 	"github.com/blevesearch/bleve"
 )
 
-func buildArticleMapping() *bleve.IndexMapping {
+func BuildArticleMapping() *bleve.IndexMapping {
 
 	// a generic reusable mapping for english text
 	standardJustIndexed := bleve.NewTextFieldMapping()

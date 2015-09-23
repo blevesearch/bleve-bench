@@ -1,5 +1,7 @@
 {
-	"leveldb": {
+	"index_type": "upside_down",
+	"kvstore": "leveldb",
+	"kvconfig": {
 		"write_buffer_size": 536870912,
 		"lru_cache_capacity": 268435456
 	}
