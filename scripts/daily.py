@@ -126,7 +126,7 @@ class Conf:
         self.query_path = data_path + "/" + "query"
 
     def run(self):
-        #self.runIndexing()
+        self.runIndexing()
         self.runQuery()
 
     #def saveResult(self, path, result):
