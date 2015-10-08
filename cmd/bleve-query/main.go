@@ -39,7 +39,7 @@ type queryFunc func() *bleve.SearchRequest
 var queryType map[string]queryFunc = map[string]queryFunc{
 	"term":  buildTermQuery,
 	"match": buildMatchQuery,
-	"fuzzy": buildFuzzyQuery,
+	//"fuzzy": buildFuzzyQuery,
 }
 
 func main() {
@@ -81,6 +81,7 @@ func main() {
 		log.Println("running", s, "query")
 		var wg sync.WaitGroup
 		q := h()
+        start := time.Now()
 		// Start the query after indexing
 		for i := 0; i < *numQueryThreads; i++ {
 			wg.Add(1)
@@ -94,6 +95,11 @@ func main() {
 			}()
 		}
 		wg.Wait()
+        end := time.Now()
+        timeTaken := end.Sub(start)
+        seconds := float64(timeTaken) / float64(time.Second)
+        mb := int(float64(*qcount) / float64(seconds))
+        log.Println("Result:", s, "query - queries per second", mb)
 		resetChan <- true
 	}
 	s := index.Stats()

@@ -7,13 +7,61 @@ import pylab
 import subprocess
 import shutil
 import datetime as dt
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
 from optparse import OptionParser
-import matplotlib.dates as mdates
+
+#TODO: some paths can be taken from environment variables
 
 def execute_cmd(cmd, f):
+    print cmd
     subprocess.call(cmd, stdout=f,stderr=subprocess.STDOUT)
+
+class Query:
+
+    def __init__(self, data, path):
+        self.data = data
+        self.path = path
+        self.tmp_path = path + "/tmp"
+        self.data_path = path + "/data"
+        if not os.path.exists(self.tmp_path):
+            os.makedirs(self.tmp_path)
+        if not os.path.exists(self.data_path):
+            os.makedirs(self.data_path)
+
+    def getPath(self):
+        return self.data_path, self.graph_path
+
+    def getName(self):
+        return "query"
+
+    def parseOutput(self, fileList):
+        for f in fileList:
+            total_bytes = 0
+            total_time = 0
+            g = open(f, "r")
+            for line in g:
+                m = re.search("Result: (\w+) query - queries per second (\d+)", line)
+                if m != None:
+                    with open(self.data_path + "/" + os.path.basename(f) + "_" + m.group(1), "a+") as myfile:
+                        myfile.write(time.strftime("%d/%m/%Y") + " " + str(m.group(2)) + "\n")
+
+    def runCmd(self):
+        out = []
+        items = self.data["items"]
+        config_files = self.data["config"]
+        binary_path = self.data["binary"]
+        source = self.data["source"]
+        target_path = self.tmp_path + "/bench"
+
+        for f in config_files:
+            if os.path.exists(target_path):
+                shutil.rmtree(target_path)
+            output_file = os.path.basename(f) + ".res"
+            CMD = [binary_path, "-config", f, "-target", target_path, "-printTime", "2s", "-source", source, "-count", items]
+            execute_cmd(CMD, open(self.tmp_path + "/" + output_file, "w"))
+            out.append(self.tmp_path + "/" + output_file)
+        return self.parseOutput(out)
+
+
 
 class Indexing:
 
@@ -55,7 +103,7 @@ class Indexing:
     def runCmd(self):
         out = []
         items = self.data["items"]
-        config_files = self.data["config_files"]
+        config_files = self.data["config"]
         binary_path = self.data["binary"]
         source = self.data["source"]
         target_path = self.tmp_path + "/bench"
@@ -75,14 +123,17 @@ class Conf:
         with open(conf_file) as config_file:
             self.config = json.load(config_file)
         self.index_path = data_path + "/" + "index"
+        self.query_path = data_path + "/" + "query"
 
     def run(self):
-        self.runIndexing()
+        #self.runIndexing()
+        self.runQuery()
 
     #def saveResult(self, path, result):
     #    pass
 
     def generateGraph(self, p, name):
+        """
         path, gpath = p
         for f in os.listdir(path):
             x = []
@@ -103,14 +154,20 @@ class Conf:
             plt.savefig(gpath + "/" + f + '.png')
             #plt.show()
             #pylab.savefig(gpath + "/"+ f + ".png")
+        """
+        pass
 
     def runIndexing(self):
         if "indexing" in self.config:
             index = Indexing(self.config["indexing"], self.index_path)
             # generate the graphs and return an dict with each type
             index.runCmd()
-            # generate the new graph
-            self.generateGraph(index.getPath(), index.getName())
+
+    def runQuery(self):
+        if "query" in self.config:
+            query = Query(self.config["query"], self.query_path)
+            # generate the graphs and return an dict with each type
+            query.runCmd()
 
 if __name__ == "__main__":
     parser = OptionParser()
