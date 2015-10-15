@@ -3,7 +3,6 @@ import json
 import os
 import re
 import time
-import pylab
 import subprocess
 import shutil
 import datetime as dt
