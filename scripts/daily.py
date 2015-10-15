@@ -42,7 +42,7 @@ class Query:
                 m = re.search("Result: (\w+) query - queries per second (\d+)", line)
                 if m != None:
                     with open(self.data_path + "/" + os.path.basename(f) + "_" + m.group(1), "a+") as myfile:
-                        myfile.write(time.strftime("%d/%m/%Y") + " " + str(m.group(2)) + "\n")
+                        myfile.write(time.strftime("%m/%d/%Y") + " " + str(m.group(2)) + "\n")
 
     def runCmd(self):
         out = []
@@ -98,7 +98,7 @@ class Indexing:
             if total_time > 0:
                 rate = total_bytes/(total_time * 1000)
             with open(self.data_path + "/" + os.path.basename(f), "a+") as myfile:
-                myfile.write(time.strftime("%d/%m/%Y") + " " + str(rate) + "\n")
+                myfile.write(time.strftime("%m/%d/%Y") + " " + str(rate) + "\n")
 
     def runCmd(self):
         out = []
