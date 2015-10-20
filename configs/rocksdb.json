@@ -1,6 +1,6 @@
 {
 	"index_type": "upside_down",
-	"kvstore": "metrics",
+	"kvstore": "rocksdb",
 	"kvconfig": {
 		"max_open_files": 200,
 		"total_threads": 4
