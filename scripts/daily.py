@@ -56,7 +56,7 @@ class Query:
             if os.path.exists(target_path):
                 shutil.rmtree(target_path)
             output_file = os.path.basename(f) + ".res"
-            CMD = [binary_path, "-config", f, "-target", target_path, "-printTime", "5s", "-source", source, "-count", items, "-qcount", qcount]
+            CMD = [binary_path, "-config", f, "-target", target_path, "-printTime", "5s", "-source", source, "-count", items, "-querycount", qcount]
             execute_cmd(CMD, open(self.tmp_path + "/" + output_file, "w"))
             out.append(self.tmp_path + "/" + output_file)
         return self.parseOutput(out)
