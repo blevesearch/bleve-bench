@@ -39,7 +39,7 @@ type queryFunc func() *bleve.SearchRequest
 var queryType map[string]queryFunc = map[string]queryFunc{
 	"term":  buildTermQuery,
 	"match": buildMatchQuery,
-	//"fuzzy": buildFuzzyQuery,
+	"fuzzy": buildFuzzyQuery,
 }
 
 func main() {
