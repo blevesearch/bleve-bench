@@ -49,13 +49,14 @@ class Query:
         config_files = self.data["config"]
         binary_path = self.data["binary"]
         source = self.data["source"]
+        qcount = self.data["qcount"]
         target_path = self.tmp_path + "/bench"
 
         for f in config_files:
             if os.path.exists(target_path):
                 shutil.rmtree(target_path)
             output_file = os.path.basename(f) + ".res"
-            CMD = [binary_path, "-config", f, "-target", target_path, "-printTime", "2s", "-source", source, "-count", items]
+            CMD = [binary_path, "-config", f, "-target", target_path, "-printTime", "2s", "-source", source, "-count", items, "-qcount", qcount]
             execute_cmd(CMD, open(self.tmp_path + "/" + output_file, "w"))
             out.append(self.tmp_path + "/" + output_file)
         return self.parseOutput(out)
