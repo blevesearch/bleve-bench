@@ -49,7 +49,7 @@ class Query:
         config_files = self.data["config"]
         binary_path = self.data["binary"]
         source = self.data["source"]
-        qcount = self.data["qcount"]
+        qcount = self.data["querycount"]
         target_path = self.tmp_path + "/bench"
 
         for f in config_files:
