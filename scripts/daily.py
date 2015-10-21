@@ -107,7 +107,7 @@ class Indexing:
             rate = 0
             std = 0
             for filename in f:
-                g = open(f, "r")
+                g = open(filename, "r")
                 for line in g:
                     m = re.search("Result: (\d+) bytes in (\d+) seconds", line)
                     if m != None:
