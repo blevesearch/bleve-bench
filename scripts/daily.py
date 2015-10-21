@@ -38,6 +38,8 @@ class Query:
             total_bytes = 0
             total_time = 0
             result = []
+            std = 0
+            rate = 0
             for filename in f:
                 g = open(filename, "r")
                 for line in g:
@@ -50,7 +52,7 @@ class Query:
                 print result
             fname = os.path.basename(f).split("__")[0]
             with open(self.data_path + "/" + fname + "_" + m.group(1), "a+") as myfile:
-                myfile.write(time.strftime("%Y%m%d") + "," + str(m.group(2)) + "\n")
+                myfile.write(time.strftime("%Y%m%d") + "," + str(m.group(2)) + "," + str(std) + "\n")
 
     def runCmd(self):
         out = []
@@ -102,6 +104,8 @@ class Indexing:
             total_bytes = 0
             total_time = 0
             result = []
+            rate = 0
+            std = 0
             for filename in f:
                 g = open(f, "r")
                 for line in g:
@@ -109,7 +113,6 @@ class Indexing:
                     if m != None:
                         total_bytes += int(m.group(1))
                         total_time += int(m.group(2))
-                rate = 0
                 if total_time > 0:
                     rate = total_bytes/(total_time * 1000)
                     result.append(rate)
@@ -119,7 +122,7 @@ class Indexing:
                 print result
             fname = os.path.basename(f).split("__")[0]
             with open(self.data_path + "/" + fname, "a+") as myfile:
-                myfile.write(time.strftime("%Y%m%d") + "," + str(rate) + "\n")
+                myfile.write(time.strftime("%Y%m%d") + "," + str(rate) + "," + str(std) + "\n")
 
     def runCmd(self):
         out = []
