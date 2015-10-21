@@ -65,10 +65,10 @@ class Query:
         count = self.data["count"]
 
         for f in config_files:
-            if os.path.exists(target_path):
-                shutil.rmtree(target_path)
             t = []
             for k in range(count):
+                if os.path.exists(target_path):
+                    shutil.rmtree(target_path)
                 output_file = os.path.basename(f) + ".res" + "__" + str(k)
                 CMD = [binary_path, "-config", f, "-target", target_path, "-printTime", "5s", "-source", source, "-count", items, "-querycount", qcount]
                 execute_cmd(CMD, open(self.tmp_path + "/" + output_file, "w"))
@@ -134,10 +134,10 @@ class Indexing:
         count = self.data["count"]
 
         for f in config_files:
-            if os.path.exists(target_path):
-                shutil.rmtree(target_path)
             t = []
             for k in range(count):
+                if os.path.exists(target_path):
+                    shutil.rmtree(target_path)
                 output_file = os.path.basename(f) + ".res" + "__" + str(k)
                 CMD = [binary_path, "-config", f, "-target", target_path, "-printTime", "5s", "-source", source, "-count", items]
                 execute_cmd(CMD, open(self.tmp_path + "/" + output_file, "w"))
