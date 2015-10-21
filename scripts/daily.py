@@ -66,8 +66,8 @@ class Query:
             if os.path.exists(target_path):
                 shutil.rmtree(target_path)
             t = []
-            for f in range(count):
-                output_file = os.path.basename(f) + ".res" + "__" + str(count)
+            for k in range(count):
+                output_file = os.path.basename(f) + ".res" + "__" + str(k)
                 CMD = [binary_path, "-config", f, "-target", target_path, "-printTime", "5s", "-source", source, "-count", items, "-querycount", qcount]
                 execute_cmd(CMD, open(self.tmp_path + "/" + output_file, "w"))
                 t.append(self.tmp_path + "/" + output_file)
@@ -134,8 +134,8 @@ class Indexing:
             if os.path.exists(target_path):
                 shutil.rmtree(target_path)
             t = []
-            for f in range(count):
-                output_file = os.path.basename(f) + ".res" + "__" + str(count)
+            for k in range(count):
+                output_file = os.path.basename(f) + ".res" + "__" + str(k)
                 CMD = [binary_path, "-config", f, "-target", target_path, "-printTime", "5s", "-source", source, "-count", items]
                 execute_cmd(CMD, open(self.tmp_path + "/" + output_file, "w"))
                 t.append(self.tmp_path + "/" + output_file)
