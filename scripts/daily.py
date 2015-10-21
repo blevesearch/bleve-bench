@@ -37,7 +37,7 @@ class Query:
         for f in fileList:
             total_bytes = 0
             total_time = 0
-            result = []
+            result = {}
             std = 0
             rate = 0
             for filename in f:
@@ -45,14 +45,18 @@ class Query:
                 for line in g:
                     m = re.search("Result: (\w+) query - queries per second (\d+)", line)
                     if m != None:
-                        result.append(m.group(2))
-            if len(result) > 0:
-                rate = max(result)
-                std = np.std(result)
-                print result
-            fname = os.path.basename(filename).split("__")[0]
-            with open(self.data_path + "/" + fname + "_" + m.group(1), "a+") as myfile:
-                myfile.write(time.strftime("%Y%m%d") + "," + str(m.group(2)) + "," + str(std) + "\n")
+			val = []
+			if m.group(1) in result:
+                        	val = result[m.group(1)]
+			val.append(int(m.group(2)))
+			result[m.group(1)] = val
+            for k,v in result.iteritems():
+                print v
+                rate = np.mean(v)
+                std = np.std(v)
+            	fname = os.path.basename(filename).split("__")[0]
+            	with open(self.data_path + "/" + fname + "_" + k, "a+") as myfile:
+                	myfile.write(time.strftime("%Y%m%d") + "," + str(rate) + "," + str(std) + "\n")
 
     def runCmd(self):
         out = []
@@ -117,7 +121,7 @@ class Indexing:
                     rate = total_bytes/(total_time * 1000)
                     result.append(rate)
             if len(result) > 0:
-                rate = max(result)
+                rate = np.mean(result)
                 std = np.std(result)
                 print result
             fname = os.path.basename(filename).split("__")[0]
