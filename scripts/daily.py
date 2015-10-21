@@ -50,7 +50,7 @@ class Query:
                 rate = max(result)
                 std = np.std(result)
                 print result
-            fname = os.path.basename(f).split("__")[0]
+            fname = os.path.basename(filename).split("__")[0]
             with open(self.data_path + "/" + fname + "_" + m.group(1), "a+") as myfile:
                 myfile.write(time.strftime("%Y%m%d") + "," + str(m.group(2)) + "," + str(std) + "\n")
 
@@ -120,7 +120,7 @@ class Indexing:
                 rate = max(result)
                 std = np.std(result)
                 print result
-            fname = os.path.basename(f).split("__")[0]
+            fname = os.path.basename(filename).split("__")[0]
             with open(self.data_path + "/" + fname, "a+") as myfile:
                 myfile.write(time.strftime("%Y%m%d") + "," + str(rate) + "," + str(std) + "\n")
 
