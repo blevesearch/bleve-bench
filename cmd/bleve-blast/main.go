@@ -67,6 +67,14 @@ func main() {
 	start = time.Now()
 	work := make(chan *Work)
 
+    // start reading worker
+	go readingWorker(index, work)
+
+	// start print time worker
+	if *printTime > 0 {
+		go printTimeWorker()
+	}
+
 	//start workers
 	var wg sync.WaitGroup
 	for i := 0; i < *numIndexers; i++ {
@@ -77,15 +85,12 @@ func main() {
 		}()
 	}
 
-	// start reading worker
-	go readingWorker(index, work)
-
-	// start print time worker
-	if *printTime > 0 {
-		go printTimeWorker()
-	}
-
 	wg.Wait()
+    end := time.Now()
+    timeTaken := end.Sub(start)
+    mb := float64(totalPlainTextIndexed) / 1000000.0
+    seconds := float64(timeTaken) / float64(time.Second)
+    log.Printf("Result: %d bytes in %d seconds = %fMB/s", totalPlainTextIndexed, timeTaken/time.Second, mb/seconds)
 
 	s := index.Stats()
 	statsBytes, err := json.Marshal(s)

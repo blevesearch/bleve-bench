@@ -90,7 +90,7 @@ class Indexing:
             total_time = 0
             g = open(f, "r")
             for line in g:
-                m = re.search("(\d+) bytes in (\d+) seconds", line)
+                m = re.search("Result: (\d+) bytes in (\d+) seconds", line)
                 if m != None:
                     total_bytes += int(m.group(1))
                     total_time += int(m.group(2))
