@@ -27,6 +27,7 @@ var qrepeat = flag.Int("qrepeat", 5, "query repeat")
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 var memprofile = flag.String("memprofile", "", "write memory profile every level")
 var configDir = flag.String("configdir", "", "directory for configs")
+var doplot = flag.Bool("plot", false, "generate plots/html")
 
 var typename []string = []string{
 	"avg_single_doc_ms",
@@ -63,22 +64,27 @@ func main() {
 		v = runConfig(*config, *target, *cpuprofile)
 		lineptrs = append(lineptrs, v)
 	}
-	fileNames := []string{}
-	for k := 0; k < len(lineptrs[0]); k++ {
-		kj := []*Line{}
-		for _, o := range lineptrs {
-			kj = append(kj, o[k])
+	if *doplot {
+		fileNames := []string{}
+		for k := 0; k < len(lineptrs[0]); k++ {
+			kj := []*Line{}
+			for _, o := range lineptrs {
+				kj = append(kj, o[k])
+			}
+			err := doPlot(kj, typename[k], "docs", "time", typename[k]+".png")
+			if err != nil {
+				log.Fatalf("error plotting: %v", err)
+			}
+			fileNames = append(fileNames, typename[k]+".png")
 		}
-		doPlot(kj, typename[k], "docs", "time", typename[k]+".png")
-		fileNames = append(fileNames, typename[k]+".png")
+		output, err := os.OpenFile("output.html", os.O_CREATE|os.O_RDWR, 0666)
+		m := &im{Images: fileNames}
+		t, err := template.ParseFiles("result.tmpl")
+		if err != nil {
+			log.Fatalf("error parsing template: %v", err)
+		}
+		t.Execute(output, m)
 	}
-	output, err := os.OpenFile("output.html", os.O_CREATE|os.O_RDWR, 0666)
-	m := &im{Images: fileNames}
-	t, err := template.ParseFiles("result.tmpl")
-	if err != nil {
-		panic(err)
-	}
-	t.Execute(output, m)
 }
 
 func runConfig(conf string, tar string, cpu string) []*Line {

@@ -24,10 +24,10 @@ func NewLines(n int, o int, conf string, name []string) []*Line {
 	return l
 }
 
-func doPlot(l []*Line, name string, xname string, yname string, file string) {
+func doPlot(l []*Line, name string, xname string, yname string, file string) error {
 	p, err := plot.New()
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	p.Title.Text = name
@@ -37,13 +37,14 @@ func doPlot(l []*Line, name string, xname string, yname string, file string) {
 	for i, k := range l {
 		err = AddLinePointsWithColor(p, i, k.ConfName, k.Pt)
 		if err != nil {
-			panic(err)
+			return err
 		}
 	}
 	// Save the plot to a PNG file.
 	if err := p.Save(4*vg.Inch, 4*vg.Inch, file); err != nil {
-		panic(err)
+		return err
 	}
+	return nil
 }
 
 func AddLinePointsWithColor(plt *plot.Plot, i int, vs ...interface{}) error {
@@ -71,7 +72,7 @@ func AddLinePointsWithColor(plt *plot.Plot, i int, vs ...interface{}) error {
 			}
 
 		default:
-			panic(fmt.Sprintf("AddLinePointsWithColor handles strings and plotter.XYers, got %T", t))
+			return fmt.Errorf("AddLinePointsWithColor handles strings and plotter.XYers, got %T", t)
 		}
 	}
 	plt.Add(ps...)
