@@ -4,10 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"html/template"
-	"io/ioutil"
 	"log"
 	"os"
-	"runtime"
 	"runtime/pprof"
 	"strconv"
 	"time"
@@ -26,59 +24,26 @@ var level = flag.Int("level", 1000, "report level")
 var qrepeat = flag.Int("qrepeat", 5, "query repeat")
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 var memprofile = flag.String("memprofile", "", "write memory profile every level")
-var configDir = flag.String("configdir", "", "directory for configs")
 var doplot = flag.Bool("plot", false, "generate plots/html")
 
-var typename []string = []string{
-	"avg_single_doc_ms",
-	"avg_batched_doc_ms",
-	"query_water_matches",
-	"first_query_water_ms",
-}
-
-type Image struct {
-	Name string
-}
-
-type im struct {
-	Images []string
+type Graph struct {
+	Div   string
+	Title string
+	Data  string
 }
 
 func main() {
 	flag.Parse()
-	lineptrs := [][]*Line{}
-	var v []*Line
-	if *configDir != "" {
-		files, _ := ioutil.ReadDir(*configDir)
-		for _, f := range files {
-			fmt.Println(f.Name())
-			if f.Name() == "." || f.Name() == ".." {
-				continue
-			}
-			v = runConfig(*configDir+"/"+f.Name(), *target+"_"+f.Name(),
-				*cpuprofile+"_"+f.Name())
-			lineptrs = append(lineptrs, v)
-			runtime.GC()
-		}
-	} else {
-		v = runConfig(*config, *target, *cpuprofile)
-		lineptrs = append(lineptrs, v)
-	}
+	v := runConfig(*config, *target, *cpuprofile)
+
 	if *doplot {
-		fileNames := []string{}
-		for k := 0; k < len(lineptrs[0]); k++ {
-			kj := []*Line{}
-			for _, o := range lineptrs {
-				kj = append(kj, o[k])
-			}
-			err := doPlot(kj, typename[k], "docs", "time", typename[k]+".png")
-			if err != nil {
-				log.Fatalf("error plotting: %v", err)
-			}
-			fileNames = append(fileNames, typename[k]+".png")
-		}
 		output, err := os.OpenFile("output.html", os.O_CREATE|os.O_RDWR, 0666)
-		m := &im{Images: fileNames}
+		m := []Graph{
+			{"index1", "avg_single_doc_ms", v[0]},
+			{"index2", "avg_batched_doc_ms\n", v[1]},
+			{"index3", "query_water_matches\n", v[2]},
+			{"index4", "first_query_water_ms\n", v[3]},
+		}
 		t, err := template.ParseFiles("result.tmpl")
 		if err != nil {
 			log.Fatalf("error parsing template: %v", err)
@@ -87,7 +52,7 @@ func main() {
 	}
 }
 
-func runConfig(conf string, tar string, cpu string) []*Line {
+func runConfig(conf string, tar string, cpu string) []string {
 	if cpu != "" {
 		f, err := os.Create(cpu)
 		if err != nil {
@@ -120,8 +85,7 @@ func runConfig(conf string, tar string, cpu string) []*Line {
 		log.Fatal(err)
 	}
 
-	itr := *count / (*level)
-	lines := NewLines(itr, len(typename), conf, typename)
+	lines := make([]string, 4)
 	tot := 0
 	// print header
 	fmt.Printf("elapsed,docs,avg_single_doc_ms,avg_batched_doc_ms,query_water_matches,first_query_water_ms,avg_repeated%d_query_water_ms", *qrepeat)
@@ -204,15 +168,13 @@ func runConfig(conf string, tar string, cpu string) []*Line {
 			elapsedTime := time.Since(start) / time.Millisecond
 			fmt.Printf("%d,%d,%f,%f,%d,%f,%f", elapsedTime, i, avgSingleDocTime/float64(time.Millisecond), avgBatchDocTime/float64(time.Millisecond), searchResults.Total, firstQueryTime/float64(time.Millisecond), avgQueryTime/float64(time.Millisecond))
 			printOther(store)
-			lines[0].Pt[tot].Y = avgSingleDocTime / float64(time.Millisecond)
-			lines[0].Pt[tot].X = float64(i)
-			lines[1].Pt[tot].Y = avgBatchDocTime / float64(time.Millisecond)
-			lines[1].Pt[tot].X = float64(i)
-			lines[2].Pt[tot].Y = firstQueryTime / float64(time.Millisecond)
-			lines[2].Pt[tot].X = float64(i)
-			lines[3].Pt[tot].Y = avgQueryTime / float64(time.Millisecond)
-			lines[3].Pt[tot].X = float64(i)
-			tot++
+			if *doplot {
+				lines[0] += fmt.Sprintf("%d,%f\n", i, avgSingleDocTime/float64(time.Millisecond))
+				lines[1] += fmt.Sprintf("%d,%f\n", i, avgBatchDocTime/float64(time.Millisecond))
+				lines[2] += fmt.Sprintf("%d,%f\n", i, firstQueryTime/float64(time.Millisecond))
+				lines[3] += fmt.Sprintf("%d,%f\n", i, avgQueryTime/float64(time.Millisecond))
+				tot++
+			}
 
 			fmt.Printf("\n")
 

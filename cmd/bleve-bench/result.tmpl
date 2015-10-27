@@ -1,8 +1,23 @@
 <html>
-{{range .Images}}
-<div align="center">
-    <img src="{{.}}">
-</div>
+<head>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/dygraph/1.1.1/dygraph-combined.js"></script>
+</head>
+{{range .}}
+<div id="{{.Div}}" style="width:800px;height:400px;margin-top:20px"></div>
+<script type="text/javascript">
+        g = new Dygraph(document.getElementById({{.Div}}),
+            {{.Data}},
+        {
+        legend: 'always',
+        animatedZooms: true,
+        title: {{.Title}},
+        xlabel: "Documents",
+        ylabel: "Time in ms",
+        labelsKMB: true,
+        labelsSeparateLines: true,
+        labels: ["Documents", "Value"]
+        });
+</script>
 <br>
 {{end}}
 </html>
