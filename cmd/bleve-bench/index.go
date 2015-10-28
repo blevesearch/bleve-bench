@@ -66,7 +66,7 @@ func main() {
 				cpu = *cpuprofile + "_" + f.Name()
 			}
 			if *memprofile != "" {
-				mem = *memprofile + f.Name()
+				mem = *memprofile + "_" + f.Name()
 			}
 			v = runConfig(*configDir+"/"+f.Name(), *target+"_"+f.Name(), cpu, mem)
 			doPlot(f.Name()+".html", v)
