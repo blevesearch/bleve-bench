@@ -4,8 +4,11 @@ import (
 	"flag"
 	"fmt"
 	"html/template"
+	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
+	"runtime"
 	"runtime/pprof"
 	"strconv"
 	"time"
@@ -24,25 +27,22 @@ var level = flag.Int("level", 1000, "report level")
 var qrepeat = flag.Int("qrepeat", 5, "query repeat")
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 var memprofile = flag.String("memprofile", "", "write memory profile every level")
+var configDir = flag.String("configdir", "", "directory for configs")
 var doplot = flag.Bool("plot", false, "generate plots/html")
 
 type Graph struct {
-	Div   string
 	Title string
 	Data  string
 }
 
-func main() {
-	flag.Parse()
-	v := runConfig(*config, *target, *cpuprofile)
-
+func doPlot(filename string, v []string) {
 	if *doplot {
-		output, err := os.OpenFile("output.html", os.O_CREATE|os.O_RDWR, 0666)
+		output, err := os.OpenFile(filename, os.O_CREATE|os.O_RDWR, 0666)
 		m := []Graph{
-			{"index1", "avg_single_doc_ms", v[0]},
-			{"index2", "avg_batched_doc_ms\n", v[1]},
-			{"index3", "query_water_matches\n", v[2]},
-			{"index4", "first_query_water_ms\n", v[3]},
+			{"avg_single_doc_ms", v[0]},
+			{"avg_batched_doc_ms", v[1]},
+			{"query_water_matches", v[2]},
+			{"first_query_water_ms", v[3]},
 		}
 		t, err := template.ParseFiles("result.tmpl")
 		if err != nil {
@@ -52,7 +52,33 @@ func main() {
 	}
 }
 
-func runConfig(conf string, tar string, cpu string) []string {
+func main() {
+	flag.Parse()
+	var v []string
+	if *configDir != "" {
+		files, _ := ioutil.ReadDir(*configDir)
+		for _, f := range files {
+			var cpu, mem string
+			if f.Name() == "." || f.Name() == ".." {
+				continue
+			}
+			if *cpuprofile != "" {
+				cpu = *cpuprofile + "_" + f.Name()
+			}
+			if *memprofile != "" {
+				mem = *memprofile + f.Name()
+			}
+			v = runConfig(*configDir+"/"+f.Name(), *target+"_"+f.Name(), cpu, mem)
+			doPlot(f.Name()+".html", v)
+			runtime.GC()
+		}
+	} else {
+		v = runConfig(*config, *target, *cpuprofile, *memprofile)
+		doPlot(filepath.Base(*config)+".html", v)
+	}
+}
+
+func runConfig(conf string, tar string, cpu string, mem string) []string {
 	if cpu != "" {
 		f, err := os.Create(cpu)
 		if err != nil {
@@ -185,8 +211,8 @@ func runConfig(conf string, tar string, cpu string) []string {
 			batchTime = 0
 
 			// dump mem stats if requested
-			if *memprofile != "" {
-				f, err := os.Create(strconv.Itoa(i) + "-" + *memprofile)
+			if mem != "" {
+				f, err := os.Create(strconv.Itoa(i) + "-" + mem)
 				if err != nil {
 					log.Fatal(err)
 				}
