@@ -1,0 +1,22 @@
+<html>
+    <head>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/dygraph/1.1.1/dygraph-combined.js"></script>
+    </head>
+<body>
+<div id="index1"></div>
+<script type="text/javascript">
+        g = new Dygraph(document.getElementById("index1"),
+            "data/index/data/boltdb.json.res",
+        {
+        legend: 'always',
+        animatedZooms: true,
+        title: "~1 KB Wikipedia English docs",
+        xlabel: "Date", 
+        ylabel: "Plain text MB/Sec", 
+        labelsKMB: true, 
+        labelsSeparateLines: true,
+	    labels: [ "Date", "Value"]
+        });
+        </script> 
+</body>
+</html>
