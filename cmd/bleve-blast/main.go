@@ -18,6 +18,7 @@ import (
 	"github.com/blevesearch/bleve-bench"
 
 	_ "github.com/blevesearch/bleve/config"
+	_ "github.com/blevesearch/bleve/index/store/null"
 )
 
 var config = flag.String("config", "", "configuration file to use")
