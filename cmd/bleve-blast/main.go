@@ -1,15 +1,16 @@
 package main
 
 import (
-	"encoding/json"
 	_ "expvar"
 	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"path"
 	"runtime/pprof"
 	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -30,18 +31,31 @@ var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 var memprofile = flag.String("memprofile", "", "write memory profile at end")
 var numIndexers = flag.Int("numIndexers", 8, "number of indexing goroutines")
 var numAnalyzers = flag.Int("numAnalyzers", 8, "number of analyzer goroutines")
-var printTime = flag.Duration("printTime", 0*time.Second, "print stats every printTime")
-var printCount = flag.Int("printCount", 1000, "print stats every printCount docs")
+var printTime = flag.Duration("printTime", 5*time.Second, "print stats every printTime")
 var bindHttp = flag.String("bindHttp", ":1234", "http bind port")
+var statsFile = flag.String("statsFile", "", "<stdout>")
 
 var totalIndexed uint64
 var totalPlainTextIndexed uint64
 var start time.Time
+var statsWriter = os.Stdout
 
 func main() {
 	flag.Parse()
 
 	go http.ListenAndServe(*bindHttp, nil)
+
+	if *statsFile != "" {
+		// create all parents if necessary
+		dir := path.Dir(*statsFile)
+		os.MkdirAll(dir, 0755)
+
+		var err error
+		statsWriter, err = os.Create(*statsFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 
 	if *cpuprofile != "" {
 		f, err := os.Create(*cpuprofile)
@@ -65,10 +79,13 @@ func main() {
 		log.Fatal(err)
 	}
 
+	printHeader()
 	start = time.Now()
+	printLine()
+
 	work := make(chan *Work)
 
-    // start reading worker
+	// start reading worker
 	go readingWorker(index, work)
 
 	// start print time worker
@@ -87,18 +104,9 @@ func main() {
 	}
 
 	wg.Wait()
-    end := time.Now()
-    timeTaken := end.Sub(start)
-    mb := float64(totalPlainTextIndexed) / 1000000.0
-    seconds := float64(timeTaken) / float64(time.Second)
-    log.Printf("Result: %d bytes in %d seconds = %fMB/s", totalPlainTextIndexed, timeTaken/time.Second, mb/seconds)
 
-	s := index.Stats()
-	statsBytes, err := json.Marshal(s)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("stats: %s", string(statsBytes))
+	// print final stats
+	printLine()
 }
 
 type Work struct {
@@ -110,79 +118,37 @@ type Work struct {
 
 func printTimeWorker() {
 	tickChan := time.NewTicker(*printTime).C
-	lastPrintTime := start
-	lastBytes := uint64(0)
 	for {
 		select {
 		case <-tickChan:
-			bytesNow := atomic.LoadUint64(&totalPlainTextIndexed)
-			bytesSince := bytesNow - lastBytes
-			timeNow := time.Now()
-			timeSince := timeNow.Sub(lastPrintTime)
-			mb := float64(bytesSince) / 1000000.0
-			log.Printf("mb: %f", mb)
-			seconds := float64(timeSince) / float64(time.Second)
-			log.Printf("s: %f", seconds)
-			log.Printf("%d bytes in %d seconds = %fMB/s", bytesSince, timeSince/time.Second, mb/seconds)
-			// reset
-			lastPrintTime = timeNow
-			lastBytes = bytesNow
+			printLine()
 		}
 	}
 }
 
-// func readingWorker(index bleve.Index, work chan *blevebench.Article) {
-// 	wikiReader, err := blevebench.NewWikiReader(*source)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	defer wikiReader.Close()
+var outputFields = []string{
+	"date",
+	"docs_indexed",
+	"plaintext_bytes_indexed",
+	"avg_mb_per_second",
+}
 
-// 	i := 0
-// 	a, err := wikiReader.Next()
-// 	for a != nil && err == nil && i <= *count {
+func printHeader() {
+	fmt.Fprintf(statsWriter, "%s\n", strings.Join(outputFields, ","))
+}
 
-// 		if i == (*count / 2) {
-// 			// dump mem stats if requested
-// 			if *memprofile != "" {
-// 				f, err := os.Create(*memprofile)
-// 				if err != nil {
-// 					log.Fatal(err)
-// 				}
-// 				pprof.WriteHeapProfile(f)
-// 			}
-// 		}
-
-// 		work <- a
-// 		i++
-
-// 		a, err = wikiReader.Next()
-// 	}
-// 	if err != nil {
-// 		log.Fatalf("reading worker fatal: %v", err)
-// 	}
-// 	close(work)
-// }
-
-// func batchIndexingWorker(index bleve.Index, workChan chan *blevebench.Article, start time.Time) {
-// 	for {
-// 		select {
-// 		case work, ok := <-workChan:
-// 			if !ok {
-// 				return
-// 			}
-// 			err := index.Index(work.Title, work)
-// 			if err != nil {
-// 				log.Fatalf("indexer worker fatal: %v", err)
-// 			}
-// 			elapsedTime := time.Since(start) / time.Millisecond
-// 			updatedTotal := atomic.AddUint64(&totalIndexed, uint64(1))
-// 			if updatedTotal%100 == 0 {
-// 				log.Printf("%d,%d", updatedTotal, elapsedTime)
-// 			}
-// 		}
-// 	}
-// }
+func printLine() {
+	// get
+	timeNow := time.Now()
+	bytesNow := atomic.LoadUint64(&totalPlainTextIndexed)
+	docsNow := atomic.LoadUint64(&totalIndexed)
+	// calculate
+	timeTaken := timeNow.Sub(start)
+	date := timeNow.Format(time.RFC3339)
+	mbs := float64(bytesNow) / 1000000.0
+	seconds := float64(timeTaken) / float64(time.Second)
+	fmt.Fprintf(statsWriter, "%s,%d,%d,%f\n", date, docsNow, bytesNow, mbs/seconds)
+}
 
 func readingWorker(index bleve.Index, work chan *Work) {
 	wikiReader, err := blevebench.NewWikiReader(*source)
@@ -275,12 +241,8 @@ func batchIndexingWorker(index bleve.Index, workChan chan *Work, start time.Time
 					log.Fatalf("indexer worker fatal: %v", err)
 				}
 			}
-			elapsedTime := time.Since(start) / time.Millisecond
-			updatedTotal := atomic.AddUint64(&totalIndexed, uint64(workSize))
+			atomic.AddUint64(&totalIndexed, uint64(workSize))
 			atomic.AddUint64(&totalPlainTextIndexed, work.plainTextBytes)
-			if updatedTotal%uint64(*printCount) == 0 {
-				log.Printf("%d,%d", updatedTotal, elapsedTime)
-			}
 		}
 	}
 }

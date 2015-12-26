@@ -1,0 +1,46 @@
+{
+	"vars": {
+		"outputDir": "/tmp/output",
+		"numcpus": "8",
+		"datadir": "/tmp/data",
+		"confdir": "/tmp/configs"
+	},
+	"tests": {
+		"indexing": {
+			"command": "bleve-blast",
+			"args": [
+				"-config={{.confdir}}/{{.configName}}.json",
+				"-count=10000",
+				"-batch=1000",
+				"-printTime=1s",
+				"-numIndexers={{.numcpus}}",
+				"-numAnalyzers={{.numcpus}}",
+				"-source={{.datadir}}/enwiki-20120502-lines-1k.txt",
+				"-statsFile={{.outputDir}}/{{.testName}}/{{.execLabel}}/{{.configName}}/{{.runNumber}}/stats.csv",
+				"-target={{.tmpDir}}/bench.bleve"
+			],
+			"env": {
+				"GOMAXPROCS": "{{.numcpus}}"
+			},
+			"repeat": 3,
+			"configs": [
+				"boltdb",
+				"rocksdb-firestorm"
+			],
+			"aggregates": [
+				{
+					"command": "bbaggregate",
+					"args": [
+						"-testdir={{.outputDir}}/{{.testName}}",
+						"-column=avg_mb_per_second",
+						"-source={{.outputDir}}/{{.testName}}/avg_mb_per_second.json",
+						"-configs={{.allConfigs}}",
+						"-filename=stats.csv",
+						"-label={{.execLabel}}",
+						"-source={{.outputDir}}/{{.testName}}/avg_mb_per_second.json"
+					]
+				}
+			]
+		}
+	}
+}
