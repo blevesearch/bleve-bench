@@ -23,8 +23,8 @@ echo "GOPATH is ${GOPATH}"
 # set up leveldb
 export CGO_CFLAGS="-I${LEVELDB}/include/"
 export CGO_LDFLAGS="-L${LEVELDB}"
-go get github.com/syndtr/goleveldb/leveldb
-echo "Installed goleveldb"
+go get github.com/jmhodges/levigo
+echo "Installed levigo"
 
 # set up rocksdb
 export CGO_CFLAGS="-I${ROCKSDB}/include/"
@@ -39,6 +39,8 @@ go get github.com/couchbase/goforestdb
 echo "Installed goforestdb"
 
 # installing bleve-bench
+export CGO_CFLAGS=""
+export CGO_LDFLAGS=""
 go get -tags 'leveldb rocksdb forestdb' github.com/blevesearch/bleve-bench/...
 
 # cleanup
