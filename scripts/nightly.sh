@@ -34,7 +34,7 @@ echo "Installed gorocksdb"
 
 # setup forestdb
 export CGO_CFLAGS="-I${FORESTDB}/include/"
-export CGO_LDFLAGS="-L${FORESTDB}"
+export CGO_LDFLAGS="-L${FORESTDB}/build/"
 go get github.com/couchbase/goforestdb
 echo "Installed goforestdb"
 
