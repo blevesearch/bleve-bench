@@ -30,7 +30,7 @@ func main() {
 		log.Fatalf("must specify at least one config")
 	}
 
-	values := make(map[string]float64)
+	values := make(map[string]string)
 
 	for _, config := range configNames {
 		log.Printf("working on config: %s", config)
@@ -45,8 +45,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		values[config] = avg
-		values[config+"_error"] = stddev
+		values[config] = fmt.Sprintf("%f,%f", avg, stddev)
 	}
 
 	err := processSource(*source, *label, values)
@@ -71,7 +70,7 @@ func filesForConfig(testdir, config, label, statsFilename string) ([]string, err
 	return matches, nil
 }
 
-func processSource(source, label string, values map[string]float64) error {
+func processSource(source, label string, values map[string]string) error {
 	log.Printf("processing source")
 	r, err := os.Open(source)
 	if err != nil {
