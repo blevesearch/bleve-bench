@@ -93,7 +93,7 @@ func processSource(source, label string, values map[string]string) error {
 		} else {
 			line += ","
 			if val, ok := values[header]; ok {
-				line += fmt.Sprintf("%f", val)
+				line += fmt.Sprintf("%s", val)
 			}
 		}
 	}
