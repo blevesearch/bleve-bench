@@ -43,7 +43,7 @@ var statsWriter = os.Stdout
 func main() {
 	flag.Parse()
 
-	go http.ListenAndServe(*bindHttp, nil)
+	go http.ListenAndServe(*bindHttp, nil) // For expvar.
 
 	if *statsFile != "" {
 		// create all parents if necessary
@@ -62,6 +62,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		defer f.Close()
 		pprof.StartCPUProfile(f)
 		defer pprof.StopCPUProfile()
 	}
@@ -93,7 +94,7 @@ func main() {
 		go printTimeWorker()
 	}
 
-	//start workers
+	// start workers
 	var wg sync.WaitGroup
 	for i := 0; i < *numIndexers; i++ {
 		wg.Add(1)
@@ -118,11 +119,8 @@ type Work struct {
 
 func printTimeWorker() {
 	tickChan := time.NewTicker(*printTime).C
-	for {
-		select {
-		case <-tickChan:
-			printLine()
-		}
+	for range tickChan {
+		printLine()
 	}
 }
 
@@ -218,31 +216,26 @@ func readingWorker(index bleve.Index, work chan *Work) {
 			log.Fatal(err)
 		}
 		pprof.WriteHeapProfile(f)
+		f.Close()
 	}
 }
 
 func batchIndexingWorker(index bleve.Index, workChan chan *Work, start time.Time) {
-	for {
-		select {
-		case work, ok := <-workChan:
-			if !ok {
-				return
+	for work := range workChan {
+		workSize := 1
+		if work.batch != nil {
+			err := index.Batch(work.batch)
+			if err != nil {
+				log.Fatalf("indexer worker fatal: %v", err)
 			}
-			workSize := 1
-			if work.batch != nil {
-				err := index.Batch(work.batch)
-				if err != nil {
-					log.Fatalf("indexer worker fatal: %v", err)
-				}
-				workSize = work.batch.Size()
-			} else {
-				err := index.Index(work.id, work.doc)
-				if err != nil {
-					log.Fatalf("indexer worker fatal: %v", err)
-				}
+			workSize = work.batch.Size()
+		} else {
+			err := index.Index(work.id, work.doc)
+			if err != nil {
+				log.Fatalf("indexer worker fatal: %v", err)
 			}
-			atomic.AddUint64(&totalIndexed, uint64(workSize))
-			atomic.AddUint64(&totalPlainTextIndexed, work.plainTextBytes)
 		}
+		atomic.AddUint64(&totalIndexed, uint64(workSize))
+		atomic.AddUint64(&totalPlainTextIndexed, work.plainTextBytes)
 	}
 }
