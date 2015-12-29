@@ -25,6 +25,12 @@
       function chartchange(el) {
         g.setVisibility(el.id, el.checked);
       }
+
+      g.ready(function() {
+        // hide null by default
+        g.setVisibility("6", 0);
+      });
+
     </script>
 <p><b>Display: </b>
 <input type=checkbox id=0 onClick="chartchange(this)" checked>
@@ -39,6 +45,9 @@
 <label for="4"> RocksDB</label>
 <input type=checkbox id=5 onClick="chartchange(this)" checked>
 <label for="5"> RocksDB-Firestorm</label>
+<input type=checkbox id=6 onClick="chartchange(this)" >
+<label for="6"> Null-Firestorm</label>
+
 </p>
   </body>
 </html>
