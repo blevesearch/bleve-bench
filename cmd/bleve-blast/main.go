@@ -36,8 +36,13 @@ var bindHttp = flag.String("bindHttp", ":1234", "http bind port")
 var statsFile = flag.String("statsFile", "", "<stdout>")
 
 var totalIndexed uint64
+var lastTotalIndexed uint64
 var totalPlainTextIndexed uint64
-var start time.Time
+var lastTotalPlainTextIndexed uint64
+
+var timeStart time.Time
+var timeLast time.Time
+
 var statsWriter = os.Stdout
 
 func main() {
@@ -81,7 +86,8 @@ func main() {
 	}
 
 	printHeader()
-	start = time.Now()
+	timeStart = time.Now()
+	timeLast = timeStart
 	printLine()
 
 	work := make(chan *Work)
@@ -99,7 +105,7 @@ func main() {
 	for i := 0; i < *numIndexers; i++ {
 		wg.Add(1)
 		go func() {
-			batchIndexingWorker(index, work, start)
+			batchIndexingWorker(index, work, timeStart)
 			wg.Done()
 		}()
 	}
@@ -129,6 +135,7 @@ var outputFields = []string{
 	"docs_indexed",
 	"plaintext_bytes_indexed",
 	"avg_mb_per_second",
+	"mb_per_second",
 }
 
 func printHeader() {
@@ -138,14 +145,28 @@ func printHeader() {
 func printLine() {
 	// get
 	timeNow := time.Now()
-	bytesNow := atomic.LoadUint64(&totalPlainTextIndexed)
-	docsNow := atomic.LoadUint64(&totalIndexed)
+	nowTotalIndexed := atomic.LoadUint64(&totalIndexed)
+	nowTotalPlainTextIndexed := atomic.LoadUint64(&totalPlainTextIndexed)
+
 	// calculate
-	timeTaken := timeNow.Sub(start)
-	date := timeNow.Format(time.RFC3339)
-	mbs := float64(bytesNow) / 1000000.0
-	seconds := float64(timeTaken) / float64(time.Second)
-	fmt.Fprintf(statsWriter, "%s,%d,%d,%f\n", date, docsNow, bytesNow, mbs/seconds)
+	curPlainTextIndexed := nowTotalPlainTextIndexed - lastTotalPlainTextIndexed
+
+	cumTimeTaken := timeNow.Sub(timeStart)
+	curTimeTaken := timeNow.Sub(timeLast)
+
+	cumMBytes := float64(nowTotalPlainTextIndexed) / 1000000.0
+	curMBytes := float64(curPlainTextIndexed) / 1000000.0
+
+	cumSeconds := float64(cumTimeTaken) / float64(time.Second)
+	curSeconds := float64(curTimeTaken) / float64(time.Second)
+
+	dateNow := timeNow.Format(time.RFC3339)
+	fmt.Fprintf(statsWriter, "%s,%d,%d,%f,%f\n", dateNow, nowTotalIndexed,
+		nowTotalPlainTextIndexed, cumMBytes/cumSeconds, curMBytes/curSeconds)
+
+	timeLast = timeNow
+	lastTotalIndexed = nowTotalIndexed
+	lastTotalPlainTextIndexed = nowTotalPlainTextIndexed
 }
 
 func readingWorker(index bleve.Index, work chan *Work) {
@@ -220,7 +241,7 @@ func readingWorker(index bleve.Index, work chan *Work) {
 	}
 }
 
-func batchIndexingWorker(index bleve.Index, workChan chan *Work, start time.Time) {
+func batchIndexingWorker(index bleve.Index, workChan chan *Work, timeStart time.Time) {
 	for work := range workChan {
 		workSize := 1
 		if work.batch != nil {
