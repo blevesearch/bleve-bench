@@ -4,6 +4,8 @@ import (
 	"github.com/blevesearch/bleve"
 )
 
+// BuildArticleMapping returns a mapping for indexing wikipedia articles
+// in a manner similar to that done by lucene nightly benchmarks
 func BuildArticleMapping() *bleve.IndexMapping {
 
 	// a generic reusable mapping for english text
@@ -28,6 +30,10 @@ func BuildArticleMapping() *bleve.IndexMapping {
 	// text
 	articleMapping.AddFieldMappingsAt("text",
 		standardJustIndexed)
+
+	// _all (disabled)
+	disabledSection := bleve.NewDocumentDisabledMapping()
+	articleMapping.AddSubDocumentMapping("_all", disabledSection)
 
 	indexMapping := bleve.NewIndexMapping()
 	indexMapping.DefaultMapping = articleMapping
