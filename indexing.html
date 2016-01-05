@@ -7,6 +7,17 @@
     <p>The indexing throughput test indexes Wikipedia articles containing approximately 1KB of text.  Currently the test indexes 100k articles and we measure the average throughput over the entire operation and display it as MB/s of plain-text indexed.</p>
     <div id="graphdiv" style="width:1200px; height:400px;"></div>
     <script type="text/javascript">
+
+    var annotations = [
+      {
+        series: "null-firestorm",
+        x: "2016-01-05",
+        shortText: "A",
+        text: "Merged perf 20160102 - https://github.com/blevesearch/bleve/pull/305",
+        cssClass: 'annotation'
+      }
+    ];
+
       g = new Dygraph(
 
         // containing div
@@ -26,6 +37,16 @@
 
       function chartchange(el) {
         g.setVisibility(el.id, el.checked);
+        // refresh annotations
+        annotationschange(document.getElementById("a"));
+      }
+
+      function annotationschange(el) {
+        if (el.checked) {
+          g.setAnnotations(annotations);
+        } else {
+          g.setAnnotations([]);
+        }
       }
 
       g.ready(function() {
@@ -49,6 +70,8 @@
 <label for="5"> RocksDB-Firestorm</label>
 <input type=checkbox id=6 onClick="chartchange(this)" >
 <label for="6"> Null-Firestorm<span title="Null-Firestorm does analysis but does not actually write any bits to disk.  It cannot actually be used but gives a sense of the theoretical maximum possible with this indexing scheme."><sup>?</sup></span></label>
+<input type=checkbox id=a onClick="annotationschange(this)" checked>
+<label for="a">Annotations</label>
 
 </p>
   </body>
