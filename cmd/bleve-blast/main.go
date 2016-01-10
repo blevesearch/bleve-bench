@@ -32,6 +32,7 @@ var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 var memprofile = flag.String("memprofile", "", "write memory profile at end")
 var numIndexers = flag.Int("numIndexers", 8, "number of indexing goroutines")
 var numAnalyzers = flag.Int("numAnalyzers", 8, "number of analyzer goroutines")
+var readerQueueSize = flag.Int("readerQueueSize", 8, "size of queue output from reader")
 var printTime = flag.Duration("printTime", 5*time.Second, "print stats every printTime")
 var bindHttp = flag.String("bindHttp", ":1234", "http bind port")
 var statsFile = flag.String("statsFile", "", "<stdout>")
@@ -91,7 +92,7 @@ func main() {
 	timeLast = timeStart
 	printLine()
 
-	work := make(chan *Work)
+	work := make(chan *Work, *readerQueueSize)
 
 	// start reading worker
 	go readingWorker(index, work)
