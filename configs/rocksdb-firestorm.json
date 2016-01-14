@@ -3,7 +3,6 @@
 	"kvstore": "rocksdb",
 	"kvconfig": {
 		"max_open_files": 200,
-		"total_threads": 4,
-		"lru_cache_capacity": 67108864
+		"total_threads": 4
 	}
 }
