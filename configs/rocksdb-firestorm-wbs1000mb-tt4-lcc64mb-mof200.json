@@ -1,0 +1,10 @@
+{
+	"index_type": "firestorm",
+	"kvstore": "rocksdb",
+	"kvconfig": {
+		"total_threads": 4,
+		"write_buffer_size": 1000000000,
+		"lru_cache_capacity": 64000000,
+		"max_open_files": 200
+	}
+}
