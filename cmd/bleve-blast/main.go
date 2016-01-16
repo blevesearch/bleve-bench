@@ -27,6 +27,7 @@ var config = flag.String("config", "", "configuration file to use")
 var source = flag.String("source", "../../tmp/enwiki.txt", "wikipedia line file")
 var target = flag.String("target", "bench.bleve", "target index filename")
 var count = flag.Int("count", 100000, "total number of documents to process")
+var maxTextSize = flag.Int("maxTextSize", 0, "when > 0, text is clipped to this length")
 var batchSize = flag.Int("batch", 100, "batch size")
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 var memprofile = flag.String("memprofile", "", "write memory profile at end")
@@ -185,6 +186,10 @@ func readingWorker(index bleve.Index, work chan *Work) {
 		bytesInBatch := uint64(0)
 		a, err := wikiReader.Next()
 		for a != nil && err == nil && i < *count {
+			if *maxTextSize > 0 && len(a.Text) > *maxTextSize {
+				a.Text = a.Text[0:*maxTextSize]
+			}
+
 			err = batch.Index(strconv.Itoa(i), a)
 			i++
 			if err != nil {
@@ -217,6 +222,10 @@ func readingWorker(index bleve.Index, work chan *Work) {
 	} else {
 		a, err := wikiReader.Next()
 		for a != nil && err == nil && i <= *count {
+			if *maxTextSize > 0 && len(a.Text) > *maxTextSize {
+				a.Text = a.Text[0:*maxTextSize]
+			}
+
 			i++
 			work <- &Work{
 				doc:            a,
