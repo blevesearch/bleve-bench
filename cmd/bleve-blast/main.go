@@ -20,6 +20,7 @@ import (
 	"github.com/blevesearch/bleve-bench"
 
 	_ "github.com/blevesearch/bleve/config"
+	_ "github.com/blevesearch/bleve/index/store/metrics"
 	_ "github.com/blevesearch/bleve/index/store/null"
 )
 
