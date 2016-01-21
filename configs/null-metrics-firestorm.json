@@ -1,0 +1,7 @@
+{
+	"index_type": "firestorm",
+	"kvstore": "metrics",
+	"kvconfig": {
+        "kvStoreName_actual": "null"
+	}
+}
