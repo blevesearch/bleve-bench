@@ -2,6 +2,9 @@
 	"index_type": "upside_down",
 	"kvstore": "forestdb",
 	"kvconfig": {
+		"bufferCacheSize": 1073741824,
+		"walThreshold": 409600,
+		"maxWriterLockProb": 20,
 		"compressDocumentBody": true
 	}
 }
