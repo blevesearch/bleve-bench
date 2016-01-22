@@ -3,9 +3,9 @@
 	"kvstore": "forestdb",
 	"kvconfig": {
 		"bufferCacheSize": 4073741824,
-		"walThreshold": 4096000,
+		"walThreshold": 409600,
 		"maxWriterLockProb": 20,
-		"compressDocumentBody": false,
+		"compressDocumentBody": true,
 		"durabilityOpt": "async"
 	}
 }
