@@ -1,0 +1,14 @@
+{
+	"index_type": "upside_down",
+	"kvstore": "moss",
+	"kvconfig": {
+		"mossDebug": 1,
+		"mossLowerLevelStoreName": "forestdb",
+
+		"bufferCacheSize": 4073741824,
+		"walThreshold": 409600,
+		"maxWriterLockProb": 20,
+		"compressDocumentBody": true,
+		"durabilityOpt": "async"
+    }
+}
