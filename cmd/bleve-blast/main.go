@@ -118,6 +118,8 @@ func main() {
 
 	// print final stats
 	printLine()
+
+	index.Close()
 }
 
 type Work struct {
