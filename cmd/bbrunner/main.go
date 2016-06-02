@@ -26,6 +26,7 @@ func main() {
 	if *execLabel == "" {
 		*execLabel = time.Now().Format("2006-01-02")
 	}
+	log.Printf("using label: %s", *execLabel)
 
 	configBytes, err := ioutil.ReadFile(*configPath)
 	if err != nil {
