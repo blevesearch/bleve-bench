@@ -20,8 +20,6 @@ BEGIN {
     if (coli==0) {
       printf("unable to find config named %s\n", col)
       exit 1
-    } else {
-      print "delete",coli
     }
     for (i=1;i<=NF;i++) {
       if (i == coli) {
