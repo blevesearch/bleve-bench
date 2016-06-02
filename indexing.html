@@ -10,20 +10,6 @@
 
     var annotations = [
       {
-        series: "null-firestorm",
-        x: "2016-01-05",
-        shortText: "A",
-        text: "Merged perf 20160102 - https://github.com/blevesearch/bleve/pull/305",
-        cssClass: 'annotation'
-      },
-      {
-        series: "rocksdb-firestorm",
-        x: "2016-01-18",
-        shortText: "B",
-        text: "RocksDB Configuration Change - https://github.com/blevesearch/bleve-bench/commit/93fbaab2303c06071c238ac7b026482312951a63",
-        cssClass: 'annotation'
-      },
-      {
         series: "forestdb",
         x: "2016-01-19",
         shortText: "C",
@@ -84,12 +70,10 @@
 <label for="2"> GoLevelDB</label>
 <input type=checkbox id=3 onClick="chartchange(this)" checked>
 <label for="3"> LevelDB</label>
-<input type=checkbox id=6 onClick="chartchange(this)" checked>
-<label for="6"> moss-ForestDB</label>
+<input type=checkbox id=5 onClick="chartchange(this)" checked>
+<label for="5"> moss-ForestDB</label>
 <input type=checkbox id=4 onClick="chartchange(this)" checked>
 <label for="4"> RocksDB</label>
-<input type=checkbox id=5 onClick="chartchange(this)" checked>
-<label for="5"> RocksDB-Firestorm</label>
 <input type=checkbox id=a onClick="annotationschange(this)" checked>
 <label for="a">Annotations</label>
 
