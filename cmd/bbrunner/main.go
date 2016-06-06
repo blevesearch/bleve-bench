@@ -53,18 +53,27 @@ func main() {
 			// add the config name to the available vars
 			config.Vars["configName"] = configName
 
+			// create a tmpDir
+			tmpDir, err := ioutil.TempDir("", "bbrunner")
+			if err != nil {
+				log.Fatalf("error creating tmpDir: %v", err)
+			}
+			// and make that available to the vars as well
+			config.Vars["tmpDir"] = tmpDir
+
+			// now run setup
+			log.Printf("Running Setup")
+			for _, setup := range testConfig.Setup {
+				err = setup.Run(config.Vars)
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+
 			log.Printf("Running the requested %d times...", testConfig.Repeat)
 			for i := 0; i < testConfig.Repeat; i++ {
 				// add the run number to the available vars
 				config.Vars["runNumber"] = fmt.Sprintf("%d", i)
-
-				// create a tmpDir
-				tmpDir, err := ioutil.TempDir("", "bbrunner")
-				if err != nil {
-					log.Fatalf("error creating tmpDir: %v", err)
-				}
-				// and make that available to the vars as well
-				config.Vars["tmpDir"] = tmpDir
 
 				command, err := exec.LookPath(testConfig.Command)
 				if err != nil {
@@ -114,11 +123,13 @@ func main() {
 				}
 				fmt.Printf("%s\n", output)
 				log.Printf("Finished Run %d", i)
-				log.Printf("Removing Run tmpDir: %s", tmpDir)
-				err = os.RemoveAll(tmpDir)
-				if err != nil {
-					log.Fatalf("error removing all: %v", err)
-				}
+
+			}
+
+			log.Printf("Removing Run tmpDir: %s", tmpDir)
+			err = os.RemoveAll(tmpDir)
+			if err != nil {
+				log.Fatalf("error removing all: %v", err)
 			}
 		}
 
@@ -126,39 +137,12 @@ func main() {
 		config.Vars["allConfigs"] = strings.Join(testConfig.Configs, ",")
 
 		// now run aggregates
+		log.Printf("Running Aggregates")
 		for _, aggregate := range testConfig.Aggregates {
-			command, err := exec.LookPath(aggregate.Command)
+			err = aggregate.Run(config.Vars)
 			if err != nil {
-				log.Fatalf("failed to locate command: %v", err)
-			} else {
-				log.Printf("Using command: %s", command)
+				log.Fatal(err)
 			}
-
-			// set up args
-			args := make([]string, len(aggregate.Args))
-			tmplEvalBuffer := &bytes.Buffer{}
-			for i, arg := range aggregate.Args {
-				tmpl := template.New("")
-				_, err := tmpl.Parse(arg)
-				if err != nil {
-					log.Fatalf("error parsing template '%s' - error %v", arg, err)
-				}
-				tmpl.Execute(tmplEvalBuffer, config.Vars)
-				args[i] = tmplEvalBuffer.String()
-				tmplEvalBuffer.Reset()
-			}
-			log.Printf("With args: %v", args)
-
-			cmd := exec.Command(command, args...)
-
-			log.Printf("Starting Aggregate")
-			output, err := cmd.CombinedOutput()
-			if err != nil {
-				fmt.Printf("%s\n", output)
-				log.Fatalf("error exeucting command: %v", err)
-			}
-			fmt.Printf("%s\n", output)
-			log.Printf("Finished Aggregate")
 		}
 	}
 }

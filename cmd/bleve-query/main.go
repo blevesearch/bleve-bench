@@ -1,198 +1,196 @@
 package main
 
 import (
-	"encoding/json"
 	_ "expvar"
 	"flag"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
+	"path"
 	"runtime/pprof"
-	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/blevesearch/bleve"
-	"github.com/blevesearch/bleve-bench"
-
 	_ "github.com/blevesearch/bleve/config"
 )
 
-var config = flag.String("config", "", "configuration file to use")
-var source = flag.String("source", "../../tmp/enwiki.txt", "wikipedia line file")
-var target = flag.String("target", "bench.bleve", "target index filename")
-var count = flag.Int("count", 1000, "total number of documents to process")
-var qcount = flag.Int("querycount", 100000, "total number of query to process")
+var target = flag.String("index", "bench.bleve", "index filename")
+var bindHTTP = flag.String("bindHttp", ":1234", "http bind port")
+var statsFile = flag.String("statsFile", "", "<stdout>")
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
-var memprofile = flag.String("memprofile", "", "write memory profile at end")
-var numQueryThreads = flag.Int("queryThreads", 8, "number of querying goroutines")
-var printTime = flag.Duration("printTime", 0*time.Second, "print stats every printTime")
-var bindHttp = flag.String("bindHttp", ":1234", "http bind port")
+var qtype = flag.String("queryType", "term", "type of query to execute: term, prefix, query_string")
+var qfield = flag.String("field", "text", "the field to query, not applicable to query_string queries")
+var qclients = flag.Int("clients", 1, "the number of query clients")
+var qtime = flag.Duration("time", 1*time.Minute, "time to run the test")
+var printTime = flag.Duration("printTime", 5*time.Second, "print stats every printTime")
 
-var totalRequests uint64
-var totalTimeTaken uint64
+var statsWriter = os.Stdout
 
-type queryFunc func() *bleve.SearchRequest
-
-var queryType map[string]queryFunc = map[string]queryFunc{
-	"term":  buildTermQuery,
-	"match": buildMatchQuery,
-	"fuzzy": buildFuzzyQuery,
-}
+var queriesStarted uint64
+var queriesFinished uint64
+var lastQueriesFinished uint64
+var timeStart time.Time
+var timeLast time.Time
 
 func main() {
 	flag.Parse()
 
-	go http.ListenAndServe(*bindHttp, nil)
+	go http.ListenAndServe(*bindHTTP, nil) // For expvar.
+
+	if *statsFile != "" {
+		// create all parents if necessary
+		dir := path.Dir(*statsFile)
+		os.MkdirAll(dir, 0755)
+
+		var err error
+		statsWriter, err = os.Create(*statsFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 
 	if *cpuprofile != "" {
 		f, err := os.Create(*cpuprofile)
 		if err != nil {
 			log.Fatal(err)
 		}
+		defer f.Close()
 		pprof.StartCPUProfile(f)
 		defer pprof.StopCPUProfile()
 	}
 
-	bleve.Config.SetAnalysisQueueSize(8)
-
-	mapping := blevebench.BuildArticleMapping()
-	benchConfig := blevebench.LoadConfigFile(*config)
-
-	fmt.Printf("Using Index Type: %s\n", benchConfig.IndexType)
-	fmt.Printf("Using KV store: %s\n", benchConfig.KVStore)
-	fmt.Printf("Using KV config: %#v\n", benchConfig.KVConfig)
-	index, err := bleve.NewUsing(*target, mapping, benchConfig.IndexType, benchConfig.KVStore, benchConfig.KVConfig)
-	if err != nil {
-		log.Fatal(err)
+	if flag.NArg() < 1 {
+		log.Fatal("must suppy at least 1 query")
 	}
 
-	// start reading worker
-	indexWorker(index)
+	queries := make([]bleve.Query, flag.NArg())
+	for i, arg := range flag.Args() {
+		var query bleve.Query
 
-	resetChan := make(chan bool)
-	if *printTime > 0 {
-		go printTimeWorker(resetChan)
-	}
-
-	for s, h := range queryType {
-		log.Println("running", s, "query")
-		var wg sync.WaitGroup
-		q := h()
-		start := time.Now()
-		// Start the query after indexing
-		for i := 0; i < *numQueryThreads; i++ {
-			wg.Add(1)
-			go func() {
-				docs := *qcount / (*numQueryThreads)
-				if i == *numQueryThreads-1 {
-					docs = docs + *qcount%(*numQueryThreads)
-				}
-				queryWorker(index, q, docs)
-				wg.Done()
-			}()
+		switch *qtype {
+		case "prefix":
+			pquery := bleve.NewPrefixQuery(arg)
+			if *qfield != "" {
+				pquery.SetField(*qfield)
+			}
+			query = pquery
+		case "term":
+			pquery := bleve.NewTermQuery(arg)
+			if *qfield != "" {
+				pquery.SetField(*qfield)
+			}
+			query = pquery
+		case "query_string":
+			// build a search with the provided parameters
+			query = bleve.NewQueryStringQuery(arg)
 		}
-		wg.Wait()
-		end := time.Now()
-		timeTaken := end.Sub(start)
-		seconds := float64(timeTaken) / float64(time.Second)
-		mb := int(float64(*qcount) / float64(seconds))
-		log.Println("Result:", s, "query - queries per second", mb)
-		resetChan <- true
+
+		queries[i] = query
 	}
-	s := index.Stats()
-	statsBytes, err := json.Marshal(s)
+
+	index, err := bleve.Open(*target)
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("stats: %s", string(statsBytes))
+
+	closeChan := make(chan struct{})
+	time.AfterFunc(*qtime, func() {
+		close(closeChan)
+	})
+
+	var wg sync.WaitGroup
+	for i := 0; i < *qclients; i++ {
+		wg.Add(1)
+		go func() {
+			queryClient(index, queries, closeChan)
+			wg.Done()
+		}()
+	}
+
+	printHeader()
+	timeStart = time.Now()
+	timeLast = timeStart
+	printLine()
+
+	// start print time worker
+	if *printTime > 0 {
+		go printTimeWorker()
+	}
+
+	wg.Wait()
+
+	// print final stats
+	printLine()
+
+	index.Close()
 }
 
-func printTimeWorker(r chan bool) {
-	tickChan := time.NewTicker(*printTime).C
-	var lastR uint64
-	lastT := time.Now()
+func queryClient(index bleve.Index, queries []bleve.Query, closeChan chan struct{}) {
+
+	// query client first creates its own unique order to run the queries
+	perm := rand.Perm(len(queries))
+	i := 0
 	for {
 		select {
-		case <-tickChan:
-			queries := atomic.LoadUint64(&totalRequests) - lastR
-			//timeTaken := atomic.LoadUint64(&totalTimeTaken) - lastT
-			timeNow := time.Now()
-			timeTaken := timeNow.Sub(lastT)
-			seconds := float64(timeTaken) / float64(time.Second)
-			mb := int(float64(queries) / float64(seconds))
-			log.Println("Total queries", totalRequests, "queries per second", mb)
-			// reset
-			lastR = totalRequests
-			lastT = timeNow
-		case <-r:
-			totalRequests = 0
-			lastR = 0
-			lastT = time.Now()
+		case <-closeChan:
+			return
+		default:
+			qi := i % len(queries)
+			i++
+			p := perm[qi]
+			q := queries[p]
+			atomic.AddUint64(&queriesStarted, 1)
+			req := bleve.NewSearchRequest(q)
+			_, err := index.Search(req)
+			if err != nil {
+				log.Fatal(err)
+			}
+			atomic.AddUint64(&queriesFinished, 1)
 		}
 	}
 }
 
-func indexWorker(index bleve.Index) {
-	wikiReader, err := blevebench.NewWikiReader(*source)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer wikiReader.Close()
-	i := 0
-	a, err := wikiReader.Next()
-	for a != nil && err == nil && i <= *count {
-		i++
-		index.Index(strconv.Itoa(i), a)
-		a, err = wikiReader.Next()
-	}
-	if err != nil {
-		log.Fatalf("reading worker fatal: %v", err)
-	}
-
-	// dump mem stats if requested
-	if *memprofile != "" {
-		f, err := os.Create(*memprofile)
-		if err != nil {
-			log.Fatal(err)
-		}
-		pprof.WriteHeapProfile(f)
-	}
+var outputFields = []string{
+	"date",
+	"queries_finished",
+	"avg_queries_per_second",
+	"queries_per_second",
 }
 
-func queryWorker(index bleve.Index, sr *bleve.SearchRequest, repeat int) {
-	termQueryCount := 0
-	for termQueryCount < repeat {
-		termQueryStart := time.Now()
-		_, err := index.Search(sr)
-		if err != nil {
-			log.Fatal(err)
-		}
-		atomic.AddUint64(&totalRequests, 1)
-		atomic.AddUint64(&totalTimeTaken, uint64(time.Since(termQueryStart)))
-		termQueryCount++
+func printHeader() {
+	fmt.Fprintf(statsWriter, "%s\n", strings.Join(outputFields, ","))
+}
+
+func printLine() {
+	// get
+	timeNow := time.Now()
+	nowQueriesFinished := atomic.LoadUint64(&queriesFinished)
+
+	// calculate
+	curQueriesFinished := nowQueriesFinished - lastQueriesFinished
+
+	cumTimeTaken := timeNow.Sub(timeStart)
+	curTimeTaken := timeNow.Sub(timeLast)
+
+	cumSeconds := float64(cumTimeTaken) / float64(time.Second)
+	curSeconds := float64(curTimeTaken) / float64(time.Second)
+
+	dateNow := timeNow.Format(time.RFC3339)
+	fmt.Fprintf(statsWriter, "%s,%d,%f,%f\n", dateNow, nowQueriesFinished,
+		float64(nowQueriesFinished)/cumSeconds, float64(curQueriesFinished)/curSeconds)
+
+	timeLast = timeNow
+	lastQueriesFinished = nowQueriesFinished
+}
+
+func printTimeWorker() {
+	tickChan := time.NewTicker(*printTime).C
+	for range tickChan {
+		printLine()
 	}
-}
-
-func buildTermQuery() *bleve.SearchRequest {
-	termQuery := bleve.NewTermQuery("water")
-	termQuery.SetField("text")
-	termSearch := bleve.NewSearchRequest(termQuery)
-	return termSearch
-}
-
-func buildMatchQuery() *bleve.SearchRequest {
-	termQuery := bleve.NewTermQuery("water")
-	termQuery.SetField("text")
-	termSearch := bleve.NewSearchRequest(termQuery)
-	return termSearch
-}
-
-func buildFuzzyQuery() *bleve.SearchRequest {
-	termQuery := bleve.NewFuzzyQuery("wate")
-	termQuery.SetField("text")
-	termSearch := bleve.NewSearchRequest(termQuery)
-	return termSearch
 }

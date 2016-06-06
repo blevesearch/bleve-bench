@@ -2,8 +2,8 @@
 	"vars": {
 		"outputDir": "/tmp/output",
 		"numcpus": "8",
-		"datadir": "/tmp/data",
-		"confdir": "/tmp/configs"
+		"datadir": "/Users/mschoch/Documents/research/lucene/data",
+		"confdir": "/Users/mschoch/go/src/github.com/blevesearch/bleve-bench/configs"
 	},
 	"tests": {
 		"indexing": {
@@ -17,15 +17,11 @@
 				"-numAnalyzers={{.numcpus}}",
 				"-source={{.datadir}}/enwiki-20120502-lines-1k.txt",
 				"-statsFile={{.outputDir}}/{{.testName}}/{{.execLabel}}/{{.configName}}/{{.runNumber}}/stats.csv",
-				"-target={{.tmpDir}}/bench.bleve"
+				"-target={{.tmpDir}}/bench-{{.runNumber}}.bleve"
 			],
-			"env": {
-				"GOMAXPROCS": "{{.numcpus}}"
-			},
 			"repeat": 3,
 			"configs": [
-				"boltdb",
-				"rocksdb-firestorm"
+				"moss-store"
 			],
 			"aggregates": [
 				{
@@ -38,6 +34,114 @@
 						"-filename=stats.csv",
 						"-label={{.execLabel}}",
 						"-source={{.outputDir}}/{{.testName}}/avg_mb_per_second.json"
+					]
+				}
+			]
+		},
+		"term-query-hi": {
+			"setup": [
+				{
+					"command": "bleve-blast",
+					"args": [
+						"-config={{.confdir}}/{{.configName}}.json",
+						"-count=10000",
+						"-batch=1000",
+						"-printTime=1s",
+						"-numIndexers={{.numcpus}}",
+						"-numAnalyzers={{.numcpus}}",
+						"-source={{.datadir}}/enwiki-20120502-lines-1k.txt",
+						"-target={{.tmpDir}}/bench.bleve"
+					]
+				}
+			],
+			"command": "bleve-query",
+			"args": [
+				"-index={{.tmpDir}}/bench.bleve",
+				"-statsFile={{.outputDir}}/{{.testName}}/{{.execLabel}}/{{.configName}}/{{.runNumber}}/stats.csv",
+				"book",
+				"can",
+				"date",
+				"first",
+				"http",
+				"isbn",
+				"last",
+				"many",
+				"name",
+				"one",
+				"see",
+				"title",
+				"united",
+				"web",
+				"year"
+			],
+			"repeat": 3,
+			"configs": [
+				"moss-store"
+			],
+			"aggregates": [
+				{
+					"command": "bbaggregate",
+					"args": [
+						"-testdir={{.outputDir}}/{{.testName}}",
+						"-column=avg_queries_per_second",
+						"-source={{.outputDir}}/{{.testName}}/term-query-hi.json",
+						"-configs={{.allConfigs}}",
+						"-filename=stats.csv",
+						"-label={{.execLabel}}"
+					]
+				}
+			]
+		},
+		"term-query-low": {
+			"setup": [
+				{
+					"command": "bleve-blast",
+					"args": [
+						"-config={{.confdir}}/{{.configName}}.json",
+						"-count=10000",
+						"-batch=1000",
+						"-printTime=1s",
+						"-numIndexers={{.numcpus}}",
+						"-numAnalyzers={{.numcpus}}",
+						"-source={{.datadir}}/enwiki-20120502-lines-1k.txt",
+						"-target={{.tmpDir}}/bench.bleve"
+					]
+				}
+			],
+			"command": "bleve-query",
+			"args": [
+				"-index={{.tmpDir}}/bench.bleve",
+				"-statsFile={{.outputDir}}/{{.testName}}/{{.execLabel}}/{{.configName}}/{{.runNumber}}/stats.csv",
+				"afternoon",
+				"camel",
+				"earthquakes",
+				"grammatical",
+				"illustrator",
+				"jointly",
+				"kentucky",
+				"mountainous",
+				"occupational",
+				"questionable",
+				"retail",
+				"silicon",
+				"unsuccessful",
+				"xml",
+				"zoo"
+			],
+			"repeat": 3,
+			"configs": [
+				"moss-store"
+			],
+			"aggregates": [
+				{
+					"command": "bbaggregate",
+					"args": [
+						"-testdir={{.outputDir}}/{{.testName}}",
+						"-column=avg_queries_per_second",
+						"-source={{.outputDir}}/{{.testName}}/term-query-low.json",
+						"-configs={{.allConfigs}}",
+						"-filename=stats.csv",
+						"-label={{.execLabel}}"
 					]
 				}
 			]
