@@ -16,6 +16,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/dustin/go-jsonpointer"
+
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve-bench"
 
@@ -38,6 +40,7 @@ var readerQueueSize = flag.Int("readerQueueSize", 8, "size of queue output from 
 var printTime = flag.Duration("printTime", 5*time.Second, "print stats every printTime")
 var bindHttp = flag.String("bindHttp", ":1234", "http bind port")
 var statsFile = flag.String("statsFile", "", "<stdout>")
+var waitPersist = flag.Bool("waitPersist", false, "wait for all data to be persisted before closing")
 
 var totalIndexed uint64
 var lastTotalIndexed uint64
@@ -119,7 +122,35 @@ func main() {
 	// print final stats
 	printLine()
 
+	if *waitPersist {
+		db, err := getDirtyBytes(index)
+		for err == nil && db > 0 {
+			time.Sleep(1 * time.Second)
+			db, err = getDirtyBytes(index)
+		}
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
 	index.Close()
+}
+
+func getDirtyBytes(index bleve.Index) (uint64, error) {
+	statsMap := index.StatsMap()
+	keys, err := jsonpointer.ReflectListPointers(statsMap)
+	if err != nil {
+		return 0, err
+	}
+	for _, key := range keys {
+		if strings.HasSuffix(key, "CurDirtyBytes") {
+			val := jsonpointer.Reflect(statsMap, key)
+			if v, ok := val.(uint64); ok {
+				return v, nil
+			}
+		}
+	}
+	return 0, nil
 }
 
 type Work struct {
