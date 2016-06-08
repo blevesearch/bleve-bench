@@ -1,21 +1,19 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 	"strings"
-	"text/template"
 	"time"
 )
 
 var configPath = flag.String("config", "config.json", "path to bbrunner config")
 var execLabel = flag.String("label", "", "label for this run of exeuction")
+var only = flag.String("only", "", "only run this test")
 
 func main() {
 	log.Printf("bbrunner started...")
@@ -44,6 +42,10 @@ func main() {
 	config.Vars["execLabel"] = *execLabel
 
 	for testName, testConfig := range config.Tests {
+		if *only != "" && *only != testName {
+			log.Printf("Skipping test: %s", testName)
+			continue
+		}
 		log.Printf("Preparing for test %s", testName)
 		// add the test name to the available vars
 		config.Vars["testName"] = testName
@@ -75,55 +77,15 @@ func main() {
 				// add the run number to the available vars
 				config.Vars["runNumber"] = fmt.Sprintf("%d", i)
 
-				command, err := exec.LookPath(testConfig.Command)
-				if err != nil {
-					log.Fatalf("failed to locate command: %v", err)
-				} else {
-					log.Printf("Using command: %s", command)
-				}
-
-				// set up args
-				args := make([]string, len(testConfig.Args))
-				tmplEvalBuffer := &bytes.Buffer{}
-				for i, arg := range testConfig.Args {
-					tmpl := template.New("")
-					_, err := tmpl.Parse(arg)
-					if err != nil {
-						log.Fatalf("error parsing template '%s' - error %v", arg, err)
-					}
-					tmpl.Execute(tmplEvalBuffer, config.Vars)
-					args[i] = tmplEvalBuffer.String()
-					tmplEvalBuffer.Reset()
-				}
-				log.Printf("With args: %v", args)
-
-				cmd := exec.Command(command, args...)
-
-				// set up env
-				env := os.Environ()
-				for envKey, envVal := range testConfig.Env {
-					tmpl := template.New("")
-					_, err := tmpl.Parse(envVal)
+				// now run tests
+				log.Printf("Running Tests")
+				for _, test := range testConfig.Tests {
+					err = test.Run(config.Vars)
 					if err != nil {
 						log.Fatal(err)
 					}
-					tmpl.Execute(tmplEvalBuffer, config.Vars)
-					envvar := fmt.Sprintf("%s=%s", envKey, tmplEvalBuffer.String())
-					log.Printf("Adding Environment Variable: %s", envvar)
-					env = append(env, envvar)
-					tmplEvalBuffer.Reset()
 				}
-				cmd.Env = env
-
-				log.Printf("Starting Run %d", i)
-				output, err := cmd.CombinedOutput()
-				if err != nil {
-					fmt.Printf("%s\n", output)
-					log.Fatalf("error exeucting command: %v", err)
-				}
-				fmt.Printf("%s\n", output)
 				log.Printf("Finished Run %d", i)
-
 			}
 
 			log.Printf("Removing Run tmpDir: %s", tmpDir)

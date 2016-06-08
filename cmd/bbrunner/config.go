@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"os"
 	"os/exec"
 )
 
@@ -14,18 +15,17 @@ type Config struct {
 }
 
 type TestConfig struct {
-	Setup      []Command         `json:"setup"`
-	Command    string            `json:"command"`
-	Args       []string          `json:"args"`
-	Env        map[string]string `json:"env"`
-	Repeat     int               `json:"repeat"`
-	Configs    []string          `json:"configs"`
-	Aggregates []Command         `json:"aggregates"`
+	Setup      []Command `json:"setup"`
+	Tests      []Command `json:"tests"`
+	Repeat     int       `json:"repeat"`
+	Configs    []string  `json:"configs"`
+	Aggregates []Command `json:"aggregates"`
 }
 
 type Command struct {
-	Name string   `json:"command"`
-	Args []string `json:"args"`
+	Name string            `json:"command"`
+	Args []string          `json:"args"`
+	Env  map[string]string `json:"env"`
 }
 
 func (c *Command) Run(vars map[string]string) error {
@@ -52,6 +52,22 @@ func (c *Command) Run(vars map[string]string) error {
 	log.Printf("With args: %v", args)
 
 	cmd := exec.Command(command, args...)
+
+	// set up env
+	env := os.Environ()
+	for envKey, envVal := range c.Env {
+		tmpl := template.New("")
+		_, err := tmpl.Parse(envVal)
+		if err != nil {
+			log.Fatal(err)
+		}
+		tmpl.Execute(tmplEvalBuffer, vars)
+		envvar := fmt.Sprintf("%s=%s", envKey, tmplEvalBuffer.String())
+		log.Printf("Adding Environment Variable: %s", envvar)
+		env = append(env, envvar)
+		tmplEvalBuffer.Reset()
+	}
+	cmd.Env = env
 
 	log.Printf("Starting Command")
 	output, err := cmd.CombinedOutput()

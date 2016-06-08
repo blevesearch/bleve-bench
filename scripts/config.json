@@ -7,17 +7,21 @@
 	},
 	"tests": {
 		"indexing": {
-			"command": "bleve-blast",
-			"args": [
-				"-config={{.confdir}}/{{.configName}}.json",
-				"-count=10000",
-				"-batch=1000",
-				"-printTime=1s",
-				"-numIndexers={{.numcpus}}",
-				"-numAnalyzers={{.numcpus}}",
-				"-source={{.datadir}}/enwiki-20120502-lines-1k.txt",
-				"-statsFile={{.outputDir}}/{{.testName}}/{{.execLabel}}/{{.configName}}/{{.runNumber}}/stats.csv",
-				"-target={{.tmpDir}}/bench-{{.runNumber}}.bleve"
+			"tests": [
+				{
+					"command": "bleve-blast",
+					"args": [
+						"-config={{.confdir}}/{{.configName}}.json",
+						"-count=10000",
+						"-batch=1000",
+						"-printTime=1s",
+						"-numIndexers={{.numcpus}}",
+						"-numAnalyzers={{.numcpus}}",
+						"-source={{.datadir}}/enwiki-20120502-lines-1k.txt",
+						"-statsFile={{.outputDir}}/{{.testName}}/{{.execLabel}}/{{.configName}}/{{.runNumber}}/stats.csv",
+						"-target={{.tmpDir}}/bench-{{.runNumber}}.bleve"
+					]
+				}
 			],
 			"repeat": 3,
 			"configs": [
@@ -54,25 +58,29 @@
 					]
 				}
 			],
-			"command": "bleve-query",
-			"args": [
-				"-index={{.tmpDir}}/bench.bleve",
-				"-statsFile={{.outputDir}}/{{.testName}}/{{.execLabel}}/{{.configName}}/{{.runNumber}}/stats.csv",
-				"book",
-				"can",
-				"date",
-				"first",
-				"http",
-				"isbn",
-				"last",
-				"many",
-				"name",
-				"one",
-				"see",
-				"title",
-				"united",
-				"web",
-				"year"
+			"tests": [
+				{
+					"command": "bleve-query",
+					"args": [
+						"-index={{.tmpDir}}/bench.bleve",
+						"-statsFile={{.outputDir}}/{{.testName}}/{{.execLabel}}/{{.configName}}/{{.runNumber}}/stats.csv",
+						"book",
+						"can",
+						"date",
+						"first",
+						"http",
+						"isbn",
+						"last",
+						"many",
+						"name",
+						"one",
+						"see",
+						"title",
+						"united",
+						"web",
+						"year"
+					]
+				}
 			],
 			"repeat": 3,
 			"configs": [
@@ -108,25 +116,29 @@
 					]
 				}
 			],
-			"command": "bleve-query",
-			"args": [
-				"-index={{.tmpDir}}/bench.bleve",
-				"-statsFile={{.outputDir}}/{{.testName}}/{{.execLabel}}/{{.configName}}/{{.runNumber}}/stats.csv",
-				"afternoon",
-				"camel",
-				"earthquakes",
-				"grammatical",
-				"illustrator",
-				"jointly",
-				"kentucky",
-				"mountainous",
-				"occupational",
-				"questionable",
-				"retail",
-				"silicon",
-				"unsuccessful",
-				"xml",
-				"zoo"
+			"tests": [
+				{
+					"command": "bleve-query",
+					"args": [
+						"-index={{.tmpDir}}/bench.bleve",
+						"-statsFile={{.outputDir}}/{{.testName}}/{{.execLabel}}/{{.configName}}/{{.runNumber}}/stats.csv",
+						"afternoon",
+						"camel",
+						"earthquakes",
+						"grammatical",
+						"illustrator",
+						"jointly",
+						"kentucky",
+						"mountainous",
+						"occupational",
+						"questionable",
+						"retail",
+						"silicon",
+						"unsuccessful",
+						"xml",
+						"zoo"
+					]
+				}
 			],
 			"repeat": 3,
 			"configs": [
