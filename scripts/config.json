@@ -42,7 +42,7 @@
 				}
 			]
 		},
-		"term-query-hi": {
+		"querying": {
 			"setup": [
 				{
 					"command": "bleve-blast",
@@ -63,7 +63,7 @@
 					"command": "bleve-query",
 					"args": [
 						"-index={{.tmpDir}}/bench.bleve",
-						"-statsFile={{.outputDir}}/{{.testName}}/{{.execLabel}}/{{.configName}}/{{.runNumber}}/stats.csv",
+						"-statsFile={{.outputDir}}/{{.testName}}/{{.execLabel}}/{{.configName}}/{{.runNumber}}/term-query-hi-stats.csv",
 						"book",
 						"can",
 						"date",
@@ -80,48 +80,12 @@
 						"web",
 						"year"
 					]
-				}
-			],
-			"repeat": 3,
-			"configs": [
-				"moss-store"
-			],
-			"aggregates": [
-				{
-					"command": "bbaggregate",
-					"args": [
-						"-testdir={{.outputDir}}/{{.testName}}",
-						"-column=avg_queries_per_second",
-						"-source={{.outputDir}}/{{.testName}}/term-query-hi.json",
-						"-configs={{.allConfigs}}",
-						"-filename=stats.csv",
-						"-label={{.execLabel}}"
-					]
-				}
-			]
-		},
-		"term-query-low": {
-			"setup": [
-				{
-					"command": "bleve-blast",
-					"args": [
-						"-config={{.confdir}}/{{.configName}}.json",
-						"-count=10000",
-						"-batch=1000",
-						"-printTime=1s",
-						"-numIndexers={{.numcpus}}",
-						"-numAnalyzers={{.numcpus}}",
-						"-source={{.datadir}}/enwiki-20120502-lines-1k.txt",
-						"-target={{.tmpDir}}/bench.bleve"
-					]
-				}
-			],
-			"tests": [
+				},
 				{
 					"command": "bleve-query",
 					"args": [
 						"-index={{.tmpDir}}/bench.bleve",
-						"-statsFile={{.outputDir}}/{{.testName}}/{{.execLabel}}/{{.configName}}/{{.runNumber}}/stats.csv",
+						"-statsFile={{.outputDir}}/{{.testName}}/{{.execLabel}}/{{.configName}}/{{.runNumber}}/term-query-low-stats.csv",
 						"afternoon",
 						"camel",
 						"earthquakes",
@@ -150,9 +114,20 @@
 					"args": [
 						"-testdir={{.outputDir}}/{{.testName}}",
 						"-column=avg_queries_per_second",
+						"-source={{.outputDir}}/{{.testName}}/term-query-hi.json",
+						"-configs={{.allConfigs}}",
+						"-filename=term-query-hi-stats.csv",
+						"-label={{.execLabel}}"
+					]
+				},
+				{
+					"command": "bbaggregate",
+					"args": [
+						"-testdir={{.outputDir}}/{{.testName}}",
+						"-column=avg_queries_per_second",
 						"-source={{.outputDir}}/{{.testName}}/term-query-low.json",
 						"-configs={{.allConfigs}}",
-						"-filename=stats.csv",
+						"-filename=term-query-low-stats.csv",
 						"-label={{.execLabel}}"
 					]
 				}
