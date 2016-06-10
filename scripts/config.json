@@ -132,6 +132,39 @@
 					]
 				}
 			]
+		},
+		"analyzing": {
+			"tests": [
+				{
+					"command": "bleve-analyzer",
+					"args": [
+						"-analyzer={{.configName}}",
+						"-source={{.datadir}}/enwiki-20120502-lines-1k.txt",
+						"-statsFile={{.outputDir}}/{{.testName}}/{{.execLabel}}/{{.configName}}/{{.runNumber}}/stats.csv"
+					]
+				}
+			],
+			"repeat": 3,
+			"configs": [
+				"standard",
+				"simple",
+				"en",
+				"edgeNGrams",
+				"shingles"
+			],
+			"aggregates": [
+				{
+					"command": "bbaggregate",
+					"args": [
+						"-testdir={{.outputDir}}/{{.testName}}",
+						"-column=avg_tokens_per_second",
+						"-source={{.outputDir}}/{{.testName}}/analyzers.json",
+						"-configs={{.allConfigs}}",
+						"-filename=stats.csv",
+						"-label={{.execLabel}}"
+					]
+				}
+			]
 		}
 	}
 }
