@@ -114,8 +114,8 @@ func main() {
 var outputFields = []string{
 	"date",
 	"tokens",
-	"avg_tokens_per_second",
-	"tokens_per_second",
+	"avg_million_tokens_per_second",
+	"milllion_tokens_per_second",
 }
 
 func printHeader() {
@@ -138,7 +138,7 @@ func printLine() {
 
 	dateNow := timeNow.Format(time.RFC3339)
 	fmt.Fprintf(statsWriter, "%s,%d,%f,%f\n", dateNow, nowTokensProduced,
-		float64(nowTokensProduced)/cumSeconds, float64(curTokensProduced)/curSeconds)
+		float64(nowTokensProduced/1000000)/cumSeconds, float64(curTokensProduced/1000000)/curSeconds)
 
 	timeLast = timeNow
 	lastTokensProduced = nowTokensProduced
