@@ -1,0 +1,66 @@
+<html>
+  <head>
+    <script type="text/javascript" src="dygraph-combined.js"></script>
+  </head>
+  <body>
+    <h1>Analyzer Throughput</h1>
+    <p>Analyzer throughput is measured by feeding 1KB Wikipedia articles into the analyzer and measuring the tokens produced.  The analyzers named "simple", "standard", and "en" correspond to the named analyzers provided with Bleve.  The "edgeNGrams" and "shingles" analyzers are configured to match the ones from the Lucene nightly benchmark.  As such, they use the "whitespace" tokenizer, which may not be realistic.</p>
+    <div id="graphdiv" style="width:1200px; height:400px;"></div>
+    <script type="text/javascript">
+
+    var annotations = [];
+
+      g = new Dygraph(
+
+        // containing div
+        document.getElementById("graphdiv"),
+
+        // CSV or path to a CSV file.
+        "data/analyzing/analyzers.json",
+
+        {
+          title: 'Analyzers',
+          legend: 'always',
+          errorBars: true,
+          ylabel: "Tokens/s",
+          labelsSeparateLines: false,
+          colors: ["#F0E442", "#000000", "#E69F00", "#56B4E9", "#009E73", "#0072B2", "#D55E00", "#CC79A7"  ]
+        }
+      );
+
+      function chartchange(el) {
+        g.setVisibility(el.id, el.checked);
+        // refresh annotations
+        annotationschange(document.getElementById("a"));
+      }
+
+      function annotationschange(el) {
+        if (el.checked) {
+          g.setAnnotations(annotations);
+        } else {
+          g.setAnnotations([]);
+        }
+      }
+
+      g.ready(function() {
+        // change defaults here
+      });
+
+    </script>
+<p><b>Display: </b>
+<input type=checkbox id=0 onClick="chartchange(this)" checked>
+<label for="0"> Simple</label>
+<input type=checkbox id=1 onClick="chartchange(this)" checked>
+<label for="1"> Standard</label>
+<input type=checkbox id=2 onClick="chartchange(this)" checked>
+<label for="2"> English</label>
+<input type=checkbox id=3 onClick="chartchange(this)" checked>
+<label for="3"> EdgeNGrams</label>
+<input type=checkbox id=4 onClick="chartchange(this)" checked>
+<label for="4"> Shingles</label>
+<input type=checkbox id=a onClick="annotationschange(this)" checked>
+<label for="a">Annotations</label>
+
+</p>
+  </body>
+</html>
