@@ -13,7 +13,7 @@ BEGIN {
   if(NR==1) {
     print $0,newcol
   } else {
-    print $0,"0.0","0.0"
+    printf("%s,,\n",$0)
   }
 }
 ' $1
