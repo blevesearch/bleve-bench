@@ -2,11 +2,12 @@ package blevebench
 
 import (
 	"github.com/blevesearch/bleve"
+	"github.com/blevesearch/bleve/mapping"
 )
 
 // BuildArticleMapping returns a mapping for indexing wikipedia articles
 // in a manner similar to that done by lucene nightly benchmarks
-func BuildArticleMapping() *bleve.IndexMapping {
+func BuildArticleMapping() mapping.IndexMapping {
 
 	// a generic reusable mapping for english text
 	standardJustIndexed := bleve.NewTextFieldMapping()

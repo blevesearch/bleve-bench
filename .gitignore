@@ -13,4 +13,5 @@
 /cmd/bleve-query/bleve-query
 /cmd/bbrunner/bbrunner
 /cmd/bbaggregate/bbaggregate
+/cmd/bleve-analyzer/bleve-analyzer
 *.bleve

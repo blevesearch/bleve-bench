@@ -17,6 +17,7 @@ import (
 
 	"github.com/blevesearch/bleve"
 	_ "github.com/blevesearch/bleve/config"
+	"github.com/blevesearch/bleve/search/query"
 )
 
 var target = flag.String("index", "bench.bleve", "index filename")
@@ -68,9 +69,9 @@ func main() {
 		log.Fatal("must suppy at least 1 query")
 	}
 
-	queries := make([]bleve.Query, flag.NArg())
+	queries := make([]query.Query, flag.NArg())
 	for i, arg := range flag.Args() {
-		var query bleve.Query
+		var query query.Query
 
 		switch *qtype {
 		case "prefix":
@@ -130,7 +131,7 @@ func main() {
 	index.Close()
 }
 
-func queryClient(index bleve.Index, queries []bleve.Query, closeChan chan struct{}) {
+func queryClient(index bleve.Index, queries []query.Query, closeChan chan struct{}) {
 
 	// query client first creates its own unique order to run the queries
 	perm := rand.Perm(len(queries))
