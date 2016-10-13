@@ -10,6 +10,7 @@ import (
 	"os"
 	"path"
 	"runtime/pprof"
+	"runtime/trace"
 	"strconv"
 	"strings"
 	"sync"
@@ -36,6 +37,7 @@ var printTime = flag.Duration("printTime", 5*time.Second, "print stats every pri
 var bindHTTP = flag.String("bindHttp", ":1234", "http bind port")
 var count = flag.Int("count", 100000, "total number of documents to process")
 var statsFile = flag.String("statsFile", "", "<stdout>")
+var traceprofile = flag.String("traceprofile", "", "write trace profile to file")
 
 var tokensProduced uint64
 var lastTokensProduced uint64
@@ -70,6 +72,16 @@ func main() {
 		defer f.Close()
 		pprof.StartCPUProfile(f)
 		defer pprof.StopCPUProfile()
+	}
+
+	if *traceprofile != "" {
+		f, err := os.Create(*traceprofile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer f.Close()
+		trace.Start(f)
+		defer trace.Stop()
 	}
 
 	defineCustomAnalyzers()
