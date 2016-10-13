@@ -10,6 +10,7 @@ import (
 	"os"
 	"path"
 	"runtime/pprof"
+	"runtime/trace"
 	"strconv"
 	"strings"
 	"sync"
@@ -41,6 +42,7 @@ var printTime = flag.Duration("printTime", 5*time.Second, "print stats every pri
 var bindHttp = flag.String("bindHttp", ":1234", "http bind port")
 var statsFile = flag.String("statsFile", "", "<stdout>")
 var waitPersist = flag.Bool("waitPersist", false, "wait for all data to be persisted before closing")
+var traceprofile = flag.String("traceprofile", "", "write trace profile to file")
 
 var totalIndexed uint64
 var lastTotalIndexed uint64
@@ -77,6 +79,16 @@ func main() {
 		defer f.Close()
 		pprof.StartCPUProfile(f)
 		defer pprof.StopCPUProfile()
+	}
+
+	if *traceprofile != "" {
+		f, err := os.Create(*traceprofile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer f.Close()
+		trace.Start(f)
+		defer trace.Stop()
 	}
 
 	bleve.Config.SetAnalysisQueueSize(*numAnalyzers)

@@ -10,6 +10,7 @@ import (
 	"os"
 	"path"
 	"runtime/pprof"
+	"runtime/trace"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -29,6 +30,7 @@ var qfield = flag.String("field", "text", "the field to query, not applicable to
 var qclients = flag.Int("clients", 1, "the number of query clients")
 var qtime = flag.Duration("time", 1*time.Minute, "time to run the test")
 var printTime = flag.Duration("printTime", 5*time.Second, "print stats every printTime")
+var traceprofile = flag.String("traceprofile", "", "write trace profile to file")
 
 var statsWriter = os.Stdout
 
@@ -63,6 +65,16 @@ func main() {
 		defer f.Close()
 		pprof.StartCPUProfile(f)
 		defer pprof.StopCPUProfile()
+	}
+
+	if *traceprofile != "" {
+		f, err := os.Create(*traceprofile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer f.Close()
+		trace.Start(f)
+		defer trace.Stop()
 	}
 
 	if flag.NArg() < 1 {
