@@ -1,9 +1,0 @@
-{
-	"index_type": "upside_down",
-	"kvstore": "moss",
-	"kvconfig": {
-		"mossDebug": 1,
-		"mossLowerLevelStoreName": "cellar",
-    "automerge": false
-    }
-}

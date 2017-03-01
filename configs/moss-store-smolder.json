@@ -1,8 +1,0 @@
-{
-        "index_type": "smolder",
-        "kvstore": "moss",
-        "kvconfig": {
-                "mossDebug": 1,
-                "mossLowerLevelStoreName": "mossStore"
-    }
-}
