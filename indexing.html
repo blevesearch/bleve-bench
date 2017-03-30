@@ -9,29 +9,7 @@
     <div id="graphdiv" style="width:1200px; height:400px;"></div>
     <script type="text/javascript">
 
-    var annotations = [
-      {
-        series: "forestdb",
-        x: "2016-01-19",
-        shortText: "C",
-        text: "ForestDB Configuration Change - https://github.com/blevesearch/bleve-bench/commit/8bc3ecef5034a8561cd5a015ad667be86434b62d",
-        cssClass: 'annotation'
-      },
-      {
-        series: "forestdb",
-        x: "2016-02-21",
-        shortText: "D",
-        text: "ForestDB Upgraded - Includes circular compaction and lightweight snapshots - https://github.com/couchbase/forestdb/commit/27fba53dae3b63b57bb897aa989fabe803db1e35",
-        cssClass: 'annotation'
-      },
-      {
-        series: "moss-forestdb",
-        x: "2016-06-02 00:00:00",
-        shortText: "E",
-        text: "Go upgrade to 1.6.2, \nMoss Performance Improvements - https://github.com/couchbase/moss/commit/96ac0317d29c7e88118bf290cfbadd282ecf7af8 \nand \n https://github.com/couchbase/moss/commit/eb96e62ded42316cb716275564fb50521efb5712 \nRocksDB revert batchex due to indexing problems \n https://github.com/blevesearch/blevex/commit/25515f54e06bdfd3de1709225b9e2197d3a42254",
-        cssClass: 'annotation'
-      }
-    ];
+    var annotations = [];
 
       g = new Dygraph(
 
@@ -74,17 +52,13 @@
 <input type=checkbox id=0 onClick="chartchange(this)" checked>
 <label for="0"> BoltDB</label>
 <input type=checkbox id=1 onClick="chartchange(this)" checked>
-<label for="1"> ForestDB</label>
+<label for="1"> GoLevelDB</label>
 <input type=checkbox id=2 onClick="chartchange(this)" checked>
-<label for="2"> GoLevelDB</label>
+<label for="2"> LevelDB</label>
 <input type=checkbox id=3 onClick="chartchange(this)" checked>
-<label for="3"> LevelDB</label>
+<label for="3"> RocksDB</label>
 <input type=checkbox id=4 onClick="chartchange(this)" checked>
-<label for="4"> RocksDB</label>
-<input type=checkbox id=5 onClick="chartchange(this)" checked>
-<label for="5"> moss-ForestDB</label>
-<input type=checkbox id=6 onClick="chartchange(this)" checked>
-<label for="6"> moss-store</label>
+<label for="4"> moss-store</label>
 <input type=checkbox id=a onClick="annotationschange(this)" checked>
 <label for="a">Annotations</label>
 
