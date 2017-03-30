@@ -3,7 +3,6 @@
 # set these for your environment
 #export LEVELDB=""
 #export ROCKSDB=""
-#export FORESTDB=""
 
 export WORKDIR="/tmp"
 
@@ -32,16 +31,10 @@ export CGO_LDFLAGS="-L${ROCKSDB} -lrocksdb -lstdc++ -lm -lz -lbz2 -lsnappy"
 go get github.com/tecbot/gorocksdb
 echo "Installed gorocksdb"
 
-# setup forestdb
-export CGO_CFLAGS="-I${FORESTDB}/include/"
-export CGO_LDFLAGS="-L${FORESTDB}/build/"
-go get github.com/couchbase/goforestdb
-echo "Installed goforestdb"
-
 # installing bleve-bench
 export CGO_CFLAGS=""
 export CGO_LDFLAGS=""
-go get -tags 'leveldb rocksdb forestdb' github.com/blevesearch/bleve-bench/...
+go get -tags 'leveldb rocksdb' github.com/blevesearch/bleve-bench/...
 
 # cleanup
 echo "Cleaning up ${TMPDIR}"

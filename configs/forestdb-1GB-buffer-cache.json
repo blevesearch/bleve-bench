@@ -1,8 +1,0 @@
-{
-	"index_type": "upside_down",
-	"kvstore": "forestdb",
-	"kvconfig": {
-		"bufferCacheSize": 1073741824,
-		"compressDocumentBody": true
-	}
-}

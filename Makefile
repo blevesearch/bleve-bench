@@ -1,5 +1,5 @@
 bleve-bench: index.go
-	go build -tags 'forestdb leveldb debug'
+	go build -tags 'leveldb debug'
 
 tmp:
 	mkdir -p tmp

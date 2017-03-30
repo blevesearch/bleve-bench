@@ -28,11 +28,11 @@ This will download the wikipedia dataset if you don't have it.  Then it will bui
 
 Build
 
-		go build 
+		go build
 
 To build it with support for some optional C-based storage engines
 
-		go build -tags 'leveldb forestdb'
+		go build -tags 'leveldb'
 
 Run the benchmark with all defaults:
 
