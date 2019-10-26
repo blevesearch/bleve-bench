@@ -39,6 +39,7 @@ var target = flag.String("index", "bench.bleve", "index filename")
 var bindHTTP = flag.String("bindHttp", ":1234", "http bind port")
 var statsFile = flag.String("statsFile", "", "<stdout>")
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
+var memprofile = flag.String("memprofile", "", "write mem profile to file")
 var qtype = flag.String("queryType", "term", "type of query to execute: term, prefix, query_string")
 var qfield = flag.String("field", "text", "the field to query, not applicable to query_string queries")
 var qclients = flag.Int("clients", 1, "the number of query clients")
@@ -79,6 +80,15 @@ func main() {
 		defer f.Close()
 		pprof.StartCPUProfile(f)
 		defer pprof.StopCPUProfile()
+	}
+
+	if *memprofile != "" {
+		f, err := os.Create(*memprofile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer f.Close()
+		pprof.WriteHeapProfile(f)
 	}
 
 	if *traceprofile != "" {
