@@ -149,27 +149,38 @@ func main() {
 	printLine()
 
 	if *waitPersist {
-		db, err := getDirtyBytes(index)
-		for err == nil && db > 0 {
-			time.Sleep(1 * time.Second)
-			db, err = getDirtyBytes(index)
-		}
-		if err != nil {
-			log.Fatal(err)
+		if benchConfig.IndexType == "scorch" {
+			db, err := getStatsValue(index, "num_items_persisted")
+			for err == nil && int(db) < *count {
+				time.Sleep(1 * time.Second)
+				db, err = getStatsValue(index, "num_items_persisted")
+			}
+			if err != nil {
+				log.Fatal(err)
+			}
+		} else {
+			db, err := getStatsValue(index, "CurDirtyBytes")
+			for err == nil && db > 0 {
+				time.Sleep(1 * time.Second)
+				db, err = getStatsValue(index, "CurDirtyBytes")
+			}
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 	}
 
 	index.Close()
 }
 
-func getDirtyBytes(index bleve.Index) (uint64, error) {
+func getStatsValue(index bleve.Index, suffix string) (uint64, error) {
 	statsMap := index.StatsMap()
 	keys, err := jsonpointer.ReflectListPointers(statsMap)
 	if err != nil {
 		return 0, err
 	}
 	for _, key := range keys {
-		if strings.HasSuffix(key, "CurDirtyBytes") {
+		if strings.HasSuffix(key, suffix) {
 			val := jsonpointer.Reflect(statsMap, key)
 			if v, ok := val.(uint64); ok {
 				return v, nil
